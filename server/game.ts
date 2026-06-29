@@ -158,6 +158,9 @@ export function addPlayer(room: Room, socketId: string, name: string, color: str
   const player = createPlayer(socketId, trimmed, 0, color);
   room.players.set(socketId, player);
   ensureTestBots(room);
+  if (!TEST_MODE) {
+    reindexLanes(room);
+  }
   return player;
 }
 

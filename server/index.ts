@@ -266,7 +266,7 @@ async function start() {
     console.log(`  Network: http://${ip}:${PORT}`);
     console.log(`  Jump:    ${GAMEPLAY.JUMP_HEIGHT_PX}px peak, ${GAMEPLAY.JUMP_DURATION_MS}ms airtime`);
     if (TEST_MODE) {
-      console.log('  Test mode: 3 bot players (DICK, SALLY, TOM) — set TEST_MODE=false to disable');
+      console.log('  Test mode: 3 bot players (DICK, SALLY, TOM) — unset TEST_MODE for real multiplayer');
     }
     if (allIps.length > 1) {
       console.log('  Also try:');

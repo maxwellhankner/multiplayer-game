@@ -23,6 +23,14 @@ npm run dev
 - On Mac: **System Settings → Network → Firewall** — allow incoming connections for Node/tsx.
 - Type the join URL manually on your phone if the QR code fails (shown on the lobby screen).
 
+## Solo development (bot players)
+
+To test without extra phones, run with three auto-jumping bot riders:
+
+```bash
+TEST_MODE=true npm run dev
+```
+
 ## Production
 
 ```bash

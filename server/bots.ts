@@ -1,5 +1,5 @@
-/** Set TEST_MODE=false to disable bot players */
-export const TEST_MODE = process.env.TEST_MODE !== 'false';
+/** Set TEST_MODE=true to enable bot players for solo development */
+export const TEST_MODE = process.env.TEST_MODE === 'true';
 
 export const BOT_PLAYERS = [
   { id: 'bot-dick', name: 'DICK' },

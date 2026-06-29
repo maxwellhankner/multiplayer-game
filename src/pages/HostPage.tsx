@@ -81,8 +81,20 @@ export default function HostPage() {
     );
   }
 
-  const joinUrl = networkInfo?.joinUrl ?? `${window.location.origin}/join`;
   const showGame = state.phase === 'countdown' || state.phase === 'playing' || state.phase === 'winner';
+
+  if (state.phase === 'lobby' && !networkInfo) {
+    return (
+      <>
+        <ScreenControls onHome={handleReturnLobby} />
+        <div className="host-page loading">
+          <p>Preparing join link for phones…</p>
+        </div>
+      </>
+    );
+  }
+
+  const joinUrl = networkInfo!.joinUrl;
 
   return (
     <>
