@@ -1,6 +1,10 @@
 ---
-description: Restart the dev server after server-breaking changes
+description: Restart the dev server after most code changes
 alwaysApply: true
 ---
 
-After `server/**`, `shared/**`, or server config changes, restart dev yourself in the background: `lsof -ti:3001 | xargs kill -9 2>/dev/null; sleep 1; NO_OPEN=1 npm run dev` — client-only `src/**` edits can rely on HMR.
+Restart the dev server yourself in the background after finishing work, unless the change is clearly non-breaking and trivial (e.g. simple CSS-only tweaks, copy, or other minor `src/**` edits that HMR handles cleanly).
+
+When restarting: `lsof -ti:3001 | xargs kill -9 2>/dev/null; sleep 1; NO_OPEN=1 npm run dev`
+
+Default to restarting for anything that touches `server/**`, `shared/**`, config, dependencies, game logic, sockets, types used by the server, or when unsure.
