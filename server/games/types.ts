@@ -1,4 +1,4 @@
-import type { PlayerState } from '../../shared/types.js';
+import type { BalloonInput, PlayerState } from '../../shared/types.js';
 
 /** Context passed to per-game bot AI each tick */
 export interface BotTickContext {
@@ -7,9 +7,14 @@ export interface BotTickContext {
     activeGameId: string | null;
     scrollX: number;
     trackWidth: number;
+    playerCount: number;
     obstacles: { lane: number; worldX: number }[];
+    coins?: { id: string; x: number; z: number }[];
+    balloons?: { arenaId: string; x: number; y: number; vx: number; vy: number }[];
   };
   triggerJump: (playerId: string) => void;
+  setCoinInput?: (playerId: string, input: import('../../shared/types.js').CoinStickInput) => void;
+  setBalloonInput?: (playerId: string, input: BalloonInput) => void;
   getHorseScreenX: (trackWidth: number) => number;
 }
 

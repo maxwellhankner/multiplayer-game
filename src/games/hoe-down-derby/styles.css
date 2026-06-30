@@ -22,8 +22,6 @@
 
 .hoe-down-derby h1,
 .hoe-down-derby h2,
-.hoe-down-derby .btn-jump,
-.hoe-down-derby .countdown-mobile,
 .hoe-down-derby .winner-card h2 {
   font-family: var(--font-display);
   font-weight: 400;
@@ -102,98 +100,12 @@
   flex-shrink: 0;
 }
 
-/* Mobile controller — in-game */
-.hoe-down-derby.controller-game {
-  min-height: 100vh;
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  background: linear-gradient(180deg, var(--saddle), var(--denim-dark));
-  padding: 0;
-}
-
-.hoe-down-derby .controller-game-center {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1.25rem;
-  width: 100%;
-  min-height: 0;
-  padding: 1.5rem;
-  padding-top: calc(4.75rem + env(safe-area-inset-top, 0px));
-  padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
-}
-
-.hoe-down-derby .controller-game-hint {
-  color: var(--tan);
-  font-size: 1.1rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  text-align: center;
-}
-
-.hoe-down-derby .hud {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.25rem;
-  background: rgba(45, 24, 16, 0.85);
-  font-weight: 600;
-  color: var(--wheat);
-}
-
-.hoe-down-derby .countdown-mobile {
-  font-size: 6rem;
-  color: var(--gold);
-  text-shadow: 2px 2px 0 var(--rust);
-  letter-spacing: 0.04em;
-}
-
-.hoe-down-derby .btn-jump {
-  width: min(280px, 80vw);
-  height: min(280px, 50vh);
-  border-radius: 50%;
-  border: 4px solid var(--gold);
-  background: linear-gradient(145deg, var(--burnt), var(--rust));
-  color: var(--cream);
-  font-size: 2.25rem;
-  cursor: pointer;
-  box-shadow: 0 8px 32px rgba(183, 65, 14, 0.45);
-  touch-action: manipulation;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.hoe-down-derby .btn-jump:active {
-  transform: scale(0.95);
-  box-shadow: 0 4px 16px rgba(183, 65, 14, 0.35);
-}
-
 .hoe-down-derby .apples-display {
-  font-size: 1.5rem;
-  letter-spacing: 0.25rem;
+  font-size: 1.25rem;
+  letter-spacing: 0.2rem;
 }
 
 .hoe-down-derby .apples-display .empty {
   opacity: 0.25;
   filter: grayscale(1);
-}
-
-.hoe-down-derby .eliminated-msg {
-  text-align: center;
-  color: var(--text-muted);
-}
-
-.hoe-down-derby .eliminated-msg p:first-child {
-  font-size: 2rem;
-  color: var(--rust);
-  margin-bottom: 0.5rem;
-  font-family: var(--font-display);
 }

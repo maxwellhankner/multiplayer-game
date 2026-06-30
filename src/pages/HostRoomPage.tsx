@@ -29,24 +29,43 @@ export default function HostRoomPage() {
   useEffect(() => {
     if (!connected || !socket.current || !roomCode) return;
 
+    let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    let attempts = 0;
+
     const sendTrackWidth = () => {
       socket.current?.emit('host:track-width', window.innerWidth);
     };
 
-    setJoining(true);
-    socket.current.emit('host:rejoin', roomCode, (res: RoomState | { error: string }) => {
-      setJoining(false);
-      if ('error' in res) {
-        setError('Room not found');
-        return;
-      }
-      setState(res);
-      sendTrackWidth();
-    });
+    const attemptRejoin = () => {
+      setJoining(true);
+      setError(null);
+      socket.current!.emit('host:rejoin', roomCode, (res: RoomState | { error: string }) => {
+        if (cancelled) return;
+        if ('error' in res) {
+          attempts += 1;
+          if (attempts < 8) {
+            retryTimer = setTimeout(attemptRejoin, 500);
+            return;
+          }
+          setJoining(false);
+          setError('Room not found');
+          return;
+        }
+        setJoining(false);
+        setError(null);
+        setState(res);
+        sendTrackWidth();
+      });
+    };
 
-    sendTrackWidth();
+    attemptRejoin();
     window.addEventListener('resize', sendTrackWidth);
-    return () => window.removeEventListener('resize', sendTrackWidth);
+    return () => {
+      cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
+      window.removeEventListener('resize', sendTrackWidth);
+    };
   }, [connected, socket, roomCode, setState]);
 
   const handleHome = () => {
@@ -77,7 +96,18 @@ export default function HostRoomPage() {
     return null;
   }
 
-  if (!connected || joining) {
+  if (!connected) {
+    return (
+      <div className="platform-shell">
+        <ScreenControls onHome={() => navigate('/')} />
+        <div className="host-page loading">
+          <p>Reconnecting to room {roomCode}…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (joining) {
     return (
       <div className="platform-shell">
         <ScreenControls onHome={() => navigate('/')} />
@@ -125,12 +155,13 @@ export default function HostRoomPage() {
 
   return (
     <div className={showGame && gameTheme ? gameTheme : 'platform-shell'}>
-      <ScreenControls onHome={handleHome} />
+      <ScreenControls onHome={showGame ? handleHome : undefined} />
       {state.phase === 'lobby' ? (
         <div className="platform-page host-lobby-page">
           <Lobby
             state={state}
             roomUrlBase={roomUrlBase}
+            onExit={() => navigate('/')}
             onKick={handleKick}
             onUpdateSettings={handleSettingsChange}
             onAddBot={handleAddBot}

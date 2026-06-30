@@ -1,15 +1,17 @@
 import type { SessionMode } from '../session.js';
 import type { GameDefinition } from './types.js';
-import { buttonHold } from './button-hold/index.js';
+import { scribbleTime } from './scribble-time/index.js';
+import { coinRush } from './coin-rush/index.js';
+import { balloonDrop } from './balloon-drop/index.js';
 import { hoeDownDerby } from './hoe-down-derby/index.js';
 import { EXTRA_PLACEHOLDER_GAMES } from './placeholders.js';
-import { tapCounter } from './tap-counter/index.js';
 
-/** All registered games — add new games by importing and appending here */
+/** All registered games — newest first */
 const ALL_GAMES: GameDefinition[] = [
+  scribbleTime,
+  balloonDrop,
+  coinRush,
   hoeDownDerby,
-  tapCounter,
-  buttonHold,
   ...EXTRA_PLACEHOLDER_GAMES,
 ];
 

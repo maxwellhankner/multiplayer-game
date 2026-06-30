@@ -1,10 +1,13 @@
 import { useState, type ReactNode } from 'react';
-import type { RoomState } from '../../shared/types';
+import type { BalloonInput, CoinStickInput, RoomState, ScribbleStroke } from '../../shared/types';
 import { isBot } from '../../shared/games/bots';
-import { MAX_PLAYERS } from '../../shared/constants';
-import { getLobbyGameList } from '../../shared/platform';
 import { getSessionModeLabel } from '../../shared/session';
 import GameControllerRouter from '../games/GameControllerRouter';
+import { isCoinRushInLobby } from '../games/coin-rush/lobby';
+import { useIsLandscape } from '../games/coin-rush/useIsLandscape';
+import MobileControllerLobby from './mobile/MobileControllerLobby';
+import MobileControllerWinner from './mobile/MobileControllerWinner';
+import PlatformControllerShell from './mobile/PlatformControllerShell';
 
 interface ControllerUIProps {
   state: RoomState | null;
@@ -14,9 +17,11 @@ interface ControllerUIProps {
   onJoin: (name: string) => void;
   onReady: () => void;
   onJump: () => void;
-  onTap: () => void;
-  onHoldStart: () => void;
-  onHoldEnd: () => void;
+  onCoinInput: (input: CoinStickInput) => void;
+  onBalloonInput: (input: BalloonInput) => void;
+  onScribblePrompt: (prompt: string) => void;
+  onScribbleDraw: (strokes: ScribbleStroke[]) => void;
+  onScribblePick: (artistId: string) => void;
   onLobbyReady: () => void;
   joinError: string | null;
   roomId: string;
@@ -24,11 +29,7 @@ interface ControllerUIProps {
 }
 
 function PlatformController({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <div className="platform-shell controller">
-      <div className={`controller-inner${className ? ` ${className}` : ''}`}>{children}</div>
-    </div>
-  );
+  return <PlatformControllerShell className={className}>{children}</PlatformControllerShell>;
 }
 
 export default function ControllerUI({
@@ -39,15 +40,18 @@ export default function ControllerUI({
   onJoin,
   onReady,
   onJump,
-  onTap,
-  onHoldStart,
-  onHoldEnd,
+  onCoinInput,
+  onBalloonInput,
+  onScribblePrompt,
+  onScribbleDraw,
+  onScribblePick,
   onLobbyReady,
   joinError,
   roomId,
   onLeave,
 }: ControllerUIProps) {
   const [name, setName] = useState('');
+  const isLandscape = useIsLandscape();
 
   if (!connected) {
     return (
@@ -170,122 +174,50 @@ export default function ControllerUI({
   }
 
   if (state.phase === 'lobby') {
-    const waitingOnOthers = me.ready && state.players.some((p) => !p.ready);
-
-    if (state.sessionMode === 'pc-host') {
-      const lobbyGames = getLobbyGameList(state.sessionMode, state.lobbySettings);
-      const statusText =
-        state.players.length === 0
-          ? 'Waiting for players'
-          : 'Game will begin when all players are ready';
-
-      return (
-        <PlatformController className="controller-room-page controller-lobby--pc-host">
-          <h2 className="lobby-room-heading controller-lobby-heading">
-            Room Code: <span className="lobby-room-code">{state.id}</span>
-          </h2>
-          <p className="lobby-session-mode">{getSessionModeLabel(state.sessionMode)}</p>
-
-          <div className="panel controller-lobby-panel">
-            <h2>Games</h2>
-            {lobbyGames.length > 0 ? (
-              <ul className="controller-game-list">
-                {lobbyGames.map((game) => (
-                  <li key={game.id}>{game.name}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="lobby-status">No games selected yet</p>
-            )}
-          </div>
-
-          <div className="panel controller-lobby-panel controller-lobby-panel--players">
-            <h2>
-              Players ({state.players.length}/{MAX_PLAYERS})
-            </h2>
-            <p className="lobby-status">{statusText}</p>
-            {state.players.length > 0 && (
-              <ul className="player-list">
-                {state.players.map((p) => (
-                  <li key={p.id} className={p.ready ? 'ready' : ''}>
-                    <span className="player-dot" style={{ background: p.color }} />
-                    <span className="player-name">
-                      {p.name}
-                      {isBot(p.id) && <span className="bot-tag"> (bot)</span>}
-                    </span>
-                    <span className="player-status">{p.ready ? 'Ready' : 'Waiting'}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div className="controller-lobby-footer">
-            {waitingOnOthers && <p className="status-msg">Waiting for others…</p>}
-            <button className="btn btn-primary btn-large" disabled={me.ready} onClick={onReady}>
-              Ready
-            </button>
-          </div>
-        </PlatformController>
-      );
-    }
+    const waitingOnOthers = me.ready && state.players.some((p) => !isBot(p.id) && !p.ready);
+    const needsLandscape = isCoinRushInLobby(state);
+    const canReady = !me.ready && (!needsLandscape || isLandscape);
 
     return (
-      <PlatformController className="controller-lobby">
-        <h1 className="platform-title">Lobby</h1>
-        <p className="hint">
-          {me.name} · Room {state.id}
-        </p>
-        <div className="lobby-players-mobile">
-          <h3>Players</h3>
-          {state.players.map((p) => (
-            <div key={p.id} className={`mobile-player ${p.ready ? 'ready' : ''}`}>
-              <span style={{ color: p.color }}>●</span> {p.name}
-              {isBot(p.id) ? ' (bot)' : ''}
-              {p.ready ? ' ✓' : ''}
-            </div>
-          ))}
-        </div>
-        <div className="controller-lobby-footer">
-          {waitingOnOthers && <p className="status-msg">Waiting for others…</p>}
-          <button className="btn btn-primary btn-large" disabled={me.ready} onClick={onReady}>
-            Ready
-          </button>
-        </div>
-      </PlatformController>
+      <MobileControllerLobby
+        state={state}
+        canReady={canReady}
+        waitingOnOthers={waitingOnOthers}
+        needsLandscape={needsLandscape}
+        isLandscape={isLandscape}
+        onReady={onReady}
+      />
     );
   }
 
   if (state.phase === 'countdown' || state.phase === 'playing') {
     return (
-      <GameControllerRouter
-        state={state}
-        playerId={playerId}
-        onJump={onJump}
-        onTap={onTap}
-        onHoldStart={onHoldStart}
-        onHoldEnd={onHoldEnd}
-      />
+      <div className="controller-game-shell">
+        <GameControllerRouter
+          state={state}
+          playerId={playerId}
+          onJump={onJump}
+          onCoinInput={onCoinInput}
+          onBalloonInput={onBalloonInput}
+          onScribblePrompt={onScribblePrompt}
+          onScribbleDraw={onScribbleDraw}
+          onScribblePick={onScribblePick}
+        />
+      </div>
     );
   }
 
   if (state.phase === 'winner') {
-    const waitingOnOthers = me.ready && state.players.some((p) => !p.ready);
+    const waitingOnOthers = me.ready && state.players.some((p) => !isBot(p.id) && !p.ready);
 
     return (
-      <PlatformController>
-        <h1 className="platform-title">
-          {state.winnerId === playerId
-            ? 'You win!'
-            : state.winnerId
-              ? `${state.winnerName} wins`
-              : 'Round over'}
-        </h1>
-        <button className="btn btn-primary btn-large" disabled={me.ready} onClick={onLobbyReady}>
-          Back to lobby
-        </button>
-        {waitingOnOthers && <p className="status-msg">Waiting for others…</p>}
-      </PlatformController>
+      <MobileControllerWinner
+        state={state}
+        playerId={playerId}
+        meReady={me.ready}
+        waitingOnOthers={waitingOnOthers}
+        onLobbyReady={onLobbyReady}
+      />
     );
   }
 

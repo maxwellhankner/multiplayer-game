@@ -1,8 +1,9 @@
 import { GAMES } from '../../shared/games/registry.js';
 import type { GameServerModule } from './types.js';
+import { scribbleTimeServer } from './scribble-time/index.js';
+import { balloonDropServer } from './balloon-drop/index.js';
+import { coinRushServer } from './coin-rush/index.js';
 import { hoeDownDerbyServer } from './hoe-down-derby/index.js';
-import { tapCounterServer } from './tap-counter/module.js';
-import { buttonHoldServer } from './button-hold/module.js';
 
 const placeholderModules: GameServerModule[] = GAMES.filter(
   (g) => g.status === 'placeholder',
@@ -12,9 +13,10 @@ const placeholderModules: GameServerModule[] = GAMES.filter(
 }));
 
 const MODULES: GameServerModule[] = [
+  scribbleTimeServer,
   hoeDownDerbyServer,
-  tapCounterServer,
-  buttonHoldServer,
+  coinRushServer,
+  balloonDropServer,
   ...placeholderModules,
 ];
 

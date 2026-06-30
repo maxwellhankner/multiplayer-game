@@ -6,6 +6,34 @@ export type { SessionMode } from './session';
 
 export type GamePhase = 'lobby' | 'countdown' | 'playing' | 'winner';
 
+export type BalloonInput = {
+  moveX: number;
+};
+
+export interface BalloonState {
+  arenaId: string;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+}
+
+export type CoinStickInput = {
+  moveX: number;
+  moveY: number;
+  lookX: number;
+  lookY: number;
+};
+
+/** @deprecated Discrete coin actions — use CoinStickInput */
+export type CoinAction = 'forward' | 'left' | 'right';
+
+export interface CoinState {
+  id: string;
+  x: number;
+  z: number;
+}
+
 export interface PlayerState {
   id: string;
   name: string;
@@ -18,11 +46,13 @@ export interface PlayerState {
   invulnUntil: number;
   flipPhase: number;
   color: string;
-  /** Tap count or best hold duration (ms) for mini-games */
+  /** Game score (coins, survival time ms, etc.) */
   score: number;
-  holding: boolean;
-  /** Timestamp when current hold started; 0 when not holding */
-  holdStart: number;
+  /** Coin Rush — world position and facing (radians, 0 = +Z) */
+  px: number;
+  pz: number;
+  yaw: number;
+  pitch: number;
 }
 
 export interface ObstacleState {
@@ -31,6 +61,22 @@ export interface ObstacleState {
   width: number;
   height: number;
   lane: number;
+}
+
+export type ScribblePhase = 'prompt' | 'draw' | 'pick';
+
+export interface ScribblePoint {
+  x: number;
+  y: number;
+}
+
+export interface ScribbleStroke {
+  points: ScribblePoint[];
+}
+
+export interface ScribbleDrawing {
+  playerId: string;
+  strokes: ScribbleStroke[];
 }
 
 export interface RoomState {
@@ -46,6 +92,13 @@ export interface RoomState {
   winnerId: string | null;
   winnerName: string | null;
   gameTime: number;
+  coins: CoinState[];
+  balloons: BalloonState[];
+  scribblePhase: ScribblePhase | null;
+  scribblePrompterId: string | null;
+  scribblePrompt: string | null;
+  scribbleDrawings: ScribbleDrawing[];
+  scribbleDrawSecondsLeft: number;
 }
 
 export interface NetworkInfo {

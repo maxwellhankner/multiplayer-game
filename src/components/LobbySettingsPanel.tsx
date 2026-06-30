@@ -11,6 +11,7 @@ interface LobbySettingsPanelProps {
   sessionMode: SessionMode;
   settings: LobbySettings;
   onChange: (patch: Partial<LobbySettings>) => void;
+  onReset?: () => void;
 }
 
 function InfoIcon() {
@@ -27,6 +28,7 @@ export default function LobbySettingsPanel({
   sessionMode,
   settings,
   onChange,
+  onReset,
 }: LobbySettingsPanelProps) {
   const [infoGameId, setInfoGameId] = useState<string | null>(null);
   const infoGame = infoGameId ? getGameById(infoGameId) : null;
@@ -97,7 +99,14 @@ export default function LobbySettingsPanel({
   if (playableGames.length === 0) {
     return (
       <>
-        <h2>Game Options</h2>
+        <div className="lobby-panel-header">
+          <h1>Game Options</h1>
+          {onReset && (
+            <button type="button" className="lobby-panel-btn" onClick={onReset}>
+              Reset
+            </button>
+          )}
+        </div>
         <p className="settings-empty">
           No games registered for <strong>{getSessionModeLabel(sessionMode)}</strong> yet.
         </p>
@@ -107,18 +116,17 @@ export default function LobbySettingsPanel({
 
   return (
     <>
-      <h2>Game Options</h2>
+      <div className="lobby-panel-header">
+        <h1>Game Options</h1>
+        {onReset && (
+          <button type="button" className="lobby-panel-btn" onClick={onReset}>
+            Reset
+          </button>
+        )}
+      </div>
 
       <section className="game-options-section" aria-label="Game selection">
         <div className="game-mode-toggle" role="group" aria-label="Game selection mode">
-          <button
-            type="button"
-            className={`game-mode-btn${isRandomMode ? ' game-mode-btn--active' : ''}`}
-            aria-pressed={isRandomMode}
-            onClick={selectRandomMode}
-          >
-            Random
-          </button>
           <button
             type="button"
             className={`game-mode-btn${isSelectedMode ? ' game-mode-btn--active' : ''}`}
@@ -126,6 +134,14 @@ export default function LobbySettingsPanel({
             onClick={selectSelectedMode}
           >
             Selected
+          </button>
+          <button
+            type="button"
+            className={`game-mode-btn${isRandomMode ? ' game-mode-btn--active' : ''}`}
+            aria-pressed={isRandomMode}
+            onClick={selectRandomMode}
+          >
+            Random
           </button>
         </div>
 

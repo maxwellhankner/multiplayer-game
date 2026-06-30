@@ -130,9 +130,10 @@ shared/
     types.ts            # GameDefinition (status, maxBots, …)
     bots.ts             # isBot, createBotId, pickBotName
     registry.ts         # All games catalog
+    scribble-time/
+    balloon-drop/
+    coin-rush/
     hoe-down-derby/
-    tap-counter/        # placeholder
-    button-hold/        # placeholder
 
 server/
   index.ts              # Express + Socket.IO
@@ -142,9 +143,10 @@ server/
   games/
     types.ts            # GameServerModule (tickBots, …)
     registry.ts
-    hoe-down-derby/     # Bot AI for jumping
-    tap-counter/        # stub
-    button-hold/        # stub
+    scribble-time/
+    balloon-drop/
+    coin-rush/
+    hoe-down-derby/
 
 src/
   platform pages        # Home, Host setup, Join, Lobby (minimal UI)
@@ -154,9 +156,10 @@ src/
     GameHostRouter.tsx
     GameControllerRouter.tsx
     placeholder/
-    hoe-down-derby/     # Canvas, views, western CSS
-    tap-counter/        # (uses placeholder views)
-    button-hold/
+    scribble-time/
+    balloon-drop/
+    coin-rush/
+    hoe-down-derby/
 ```
 
 ### Game module contract
@@ -293,9 +296,10 @@ Organized by complexity and fit with session modes.
 
 | Game | Hook | Status | ID |
 |------|------|--------|-----|
+| **Scribble Time** | Prompt, draw, pick favorite | playable | `scribble-time` |
+| **Balloon Drop** | Keep balloon in the air | playable | `balloon-drop` |
+| **Coin Rush** | Collect coins in 3D arena | playable | `coin-rush` |
 | **Hoe Down Derby** | Horse jumping survival | playable | `hoe-down-derby` |
-| **Tap Counter** | Tap race | placeholder | `tap-counter` |
-| **Button Hold** | Hold challenge | placeholder | `button-hold` |
 | **Wanted Poster** | Describe/draw/guess | idea | — |
 | **Party Vote** | Rank choices, reveal bars | idea | — |
 
@@ -434,7 +438,7 @@ Things that carry forward:
 1. Review this doc; answer **Open Questions** above.
 2. Agree on **Game 2** name and MVP scope (player count, map size).
 3. Start **Phase 1** refactor: lobby game picker + extract Hoe Down Derby module without changing gameplay.
-4. Implement **Tap Counter** as first non-western playable game.
+4. Ship the next playable party game from the placeholder catalog.
 
 ---
 

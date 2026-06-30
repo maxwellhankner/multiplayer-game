@@ -4,6 +4,18 @@ export function isBot(playerId: string): boolean {
   return playerId.startsWith('bot-');
 }
 
+/** Bots always appear ready in lobby UI; humans use their actual ready flag. */
+export function showsAsReady(player: { id: string; ready: boolean }): boolean {
+  return isBot(player.id) || player.ready;
+}
+
+/** Game start / lobby return only requires every human player to be ready. */
+export function allHumansReady(players: Iterable<{ id: string; ready: boolean }>): boolean {
+  const humans = [...players].filter((p) => !isBot(p.id));
+  if (humans.length === 0) return false;
+  return humans.every((p) => p.ready);
+}
+
 export function createBotId(): string {
   const suffix = Math.random().toString(36).slice(2, 9);
   return `bot-${suffix}`;

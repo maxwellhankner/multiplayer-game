@@ -54,8 +54,10 @@ export function createBotPlayer(
     flipPhase: 0,
     color,
     score: 0,
-    holding: false,
-    holdStart: 0,
+    px: 0,
+    pz: 0,
+    yaw: 0,
+    pitch: 0,
   };
 }
 

@@ -1,0 +1,6 @@
+---
+description: Restart the dev server after server-breaking changes
+alwaysApply: true
+---
+
+After `server/**`, `shared/**`, or server config changes, restart dev yourself in the background: `lsof -ti:3001 | xargs kill -9 2>/dev/null; sleep 1; NO_OPEN=1 npm run dev` — client-only `src/**` edits can rely on HMR.

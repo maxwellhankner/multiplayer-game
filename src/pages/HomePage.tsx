@@ -4,7 +4,7 @@ import SessionModePicker from '../components/SessionModePicker';
 import ScreenControls from '../components/ScreenControls';
 import { useSocket } from '../hooks/useSocket';
 import { PLATFORM_NAME } from '../../shared/platform';
-import { guestRoomPath, hostRoomPath, normalizeRoomCode } from '../../shared/routes';
+import { guestRoomPath, hostRoomPath, isValidRoomCode, normalizeRoomCode, ROOM_CODE_LENGTH } from '../../shared/routes';
 import type { SessionMode } from '../../shared/session';
 import type { RoomState } from '../../shared/types';
 
@@ -16,7 +16,7 @@ export default function HomePage() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
-  const canJoin = normalizeRoomCode(roomInput).length === 4;
+  const canJoin = isValidRoomCode(roomInput);
 
   const handleStart = () => {
     if (!selectedMode || !socket.current || !connected || creating) return;
@@ -40,7 +40,7 @@ export default function HomePage() {
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault();
     const code = normalizeRoomCode(roomInput);
-    if (code.length !== 4) return;
+    if (!isValidRoomCode(code)) return;
     navigate(guestRoomPath(code));
   };
 
@@ -62,11 +62,13 @@ export default function HomePage() {
               placeholder="ROOM CODE"
               aria-label="Room code"
               value={roomInput}
-              maxLength={4}
+              maxLength={ROOM_CODE_LENGTH}
               autoComplete="off"
               autoCapitalize="characters"
               spellCheck={false}
-              onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
+              onChange={(e) =>
+                setRoomInput(normalizeRoomCode(e.target.value).slice(0, ROOM_CODE_LENGTH))
+              }
             />
             <button
               type="submit"

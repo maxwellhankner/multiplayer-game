@@ -1,0 +1,15 @@
+export const BALLOON_DROP_ARENA_WIDTH = 100;
+export const BALLOON_DROP_FLOOR_Y = 8;
+export const BALLOON_DROP_CEILING_Y = 92;
+export const BALLOON_DROP_PLAYER_Y = 14;
+export const BALLOON_DROP_PLAYER_RADIUS = 5;
+export const BALLOON_DROP_HEAD_RADIUS = 4.5;
+export const BALLOON_DROP_BALLOON_RADIUS = 4;
+export const BALLOON_DROP_MOVE_SPEED = 22;
+export const BALLOON_DROP_GRAVITY = 28;
+export const BALLOON_DROP_BOUNCE_UP = 38;
+export const BALLOON_DROP_WALL_BOUNCE = 0.85;
+export const BALLOON_DROP_DRIFT = 8;
+export const BALLOON_DROP_MAX_VX = 18;
+export const BALLOON_DROP_MAX_VY = 32;
+export const BALLOON_DROP_INPUT_DEADZONE = 0.15;

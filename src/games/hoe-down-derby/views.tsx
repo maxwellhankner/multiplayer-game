@@ -1,5 +1,6 @@
 import GameCanvas from './GameCanvas';
 import WinnerScreen from './WinnerScreen';
+import MobileControllerCountdown from '../../components/mobile/MobileControllerCountdown';
 import type { GameControllerProps, GameHostProps } from '../types';
 
 export function HoeDownHostView({ state }: GameHostProps) {
@@ -17,19 +18,19 @@ export function HoeDownControllerView({ state, playerId, onJump }: GameControlle
 
   if (state.phase === 'countdown') {
     return (
-      <div className="controller-game-center">
-        <div className="countdown-mobile">{state.countdown > 0 ? state.countdown : 'GO!'}</div>
-        <p className="controller-game-hint">Get ready to jump</p>
-      </div>
+      <MobileControllerCountdown
+        count={state.countdown > 0 ? state.countdown : 'GO!'}
+        hint="Get ready to jump"
+      />
     );
   }
 
   if (state.phase === 'playing') {
     return (
-      <>
-        <div className="hud">
+      <div className="controller-game-play">
+        <div className="controller-game-hud">
           <span style={{ color: me.color }}>{me.name}</span>
-          <span className="apples-display">
+          <span className="controller-game-hud-muted apples-display">
             {[0, 1, 2].map((i) => (
               <span key={i} className={i < me.lives ? 'filled' : 'empty'}>
                 🍎
@@ -39,13 +40,14 @@ export function HoeDownControllerView({ state, playerId, onJump }: GameControlle
         </div>
         <div className="controller-game-center">
           {me.eliminated ? (
-            <div className="eliminated-msg">
-              <p>You're out</p>
-              <p>Watch the main screen</p>
+            <div className="controller-game-eliminated">
+              <p className="controller-game-eliminated-title">You&apos;re out</p>
+              <p className="controller-game-eliminated-detail">Watch the main screen</p>
             </div>
           ) : (
             <button
-              className="btn-jump"
+              type="button"
+              className="controller-game-btn controller-game-btn--action"
               onTouchStart={(e) => {
                 e.preventDefault();
                 onJump?.();
@@ -56,7 +58,7 @@ export function HoeDownControllerView({ state, playerId, onJump }: GameControlle
             </button>
           )}
         </div>
-      </>
+      </div>
     );
   }
 

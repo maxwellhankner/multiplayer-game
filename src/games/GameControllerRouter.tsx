@@ -1,22 +1,26 @@
-import type { RoomState } from '../../shared/types';
+import type { BalloonInput, CoinStickInput, RoomState, ScribbleStroke } from '../../shared/types';
 import { getGameClientModule, getGameThemeClass } from './registry';
 
 interface GameControllerRouterProps {
   state: RoomState;
   playerId: string;
   onJump: () => void;
-  onTap: () => void;
-  onHoldStart: () => void;
-  onHoldEnd: () => void;
+  onCoinInput: (input: CoinStickInput) => void;
+  onBalloonInput: (input: BalloonInput) => void;
+  onScribblePrompt: (prompt: string) => void;
+  onScribbleDraw: (strokes: ScribbleStroke[]) => void;
+  onScribblePick: (artistId: string) => void;
 }
 
 export default function GameControllerRouter({
   state,
   playerId,
   onJump,
-  onTap,
-  onHoldStart,
-  onHoldEnd,
+  onCoinInput,
+  onBalloonInput,
+  onScribblePrompt,
+  onScribbleDraw,
+  onScribblePick,
 }: GameControllerRouterProps) {
   const gameId = state.activeGameId;
   const module = getGameClientModule(gameId);
@@ -35,9 +39,11 @@ export default function GameControllerRouter({
           state={state}
           playerId={playerId}
           onJump={onJump}
-          onTap={onTap}
-          onHoldStart={onHoldStart}
-          onHoldEnd={onHoldEnd}
+          onCoinInput={onCoinInput}
+          onBalloonInput={onBalloonInput}
+          onScribblePrompt={onScribblePrompt}
+          onScribbleDraw={onScribbleDraw}
+          onScribblePick={onScribblePick}
         />
       </div>
     );

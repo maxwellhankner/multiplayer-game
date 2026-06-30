@@ -1,0 +1,379 @@
+.balloon-drop-host {
+  position: fixed;
+  inset: 0;
+  background: #1a2433;
+}
+
+.balloon-drop-host canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.balloon-drop-countdown {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: #1a2a3a;
+  z-index: 5;
+}
+
+.balloon-drop-countdown-num {
+  font-size: clamp(4rem, 14vw, 7rem);
+  font-weight: 700;
+}
+
+.balloon-drop-countdown-hint {
+  color: #9ab;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Host winner overlay */
+.balloon-drop-winner-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  padding-top: max(1.25rem, env(safe-area-inset-top));
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  background: linear-gradient(
+    165deg,
+    rgba(26, 42, 58, 0.82) 0%,
+    rgba(135, 206, 235, 0.35) 45%,
+    rgba(26, 36, 51, 0.88) 100%
+  );
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.balloon-drop-winner-card {
+  --win-accent: #e63946;
+  position: relative;
+  width: min(100%, 560px);
+  max-height: min(92dvh, 720px);
+  overflow-y: auto;
+  padding: clamp(1.5rem, 4vw, 2.25rem);
+  border-radius: 20px;
+  text-align: center;
+  color: #1a2433;
+  background: linear-gradient(180deg, #fff 0%, #f0f8ff 100%);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--win-accent) 35%, transparent),
+    0 20px 50px rgba(0, 0, 0, 0.35);
+  animation: balloon-drop-winner-pop 0.45s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+.balloon-drop-winner-card--solo {
+  --win-accent: #5dade2;
+}
+
+@keyframes balloon-drop-winner-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.88) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.balloon-drop-winner-hero-icon {
+  font-size: clamp(2.5rem, 8vw, 3.5rem);
+  line-height: 1;
+  margin-bottom: 0.35rem;
+  animation: balloon-drop-winner-bounce 1.2s ease-in-out infinite;
+}
+
+@keyframes balloon-drop-winner-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.balloon-drop-winner-eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6b7c8f;
+}
+
+.balloon-drop-winner-title {
+  margin: 0.2rem 0 0.65rem;
+  font-size: clamp(1.75rem, 6vw, 2.5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--win-accent);
+}
+
+.balloon-drop-winner-time {
+  margin: 0;
+  font-size: clamp(2.5rem, 10vw, 3.75rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #1a2433;
+  line-height: 1;
+}
+
+.balloon-drop-winner-subtitle {
+  margin: 0 0 1.25rem;
+  font-size: 0.95rem;
+  color: #5a6a7d;
+}
+
+.balloon-drop-winner-hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.balloon-drop-winner-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(26, 36, 51, 0.06);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.balloon-drop-winner-chip--win {
+  background: color-mix(in srgb, var(--win-accent) 14%, white);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--win-accent) 40%, transparent);
+}
+
+.balloon-drop-winner-chip-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.balloon-drop-winner-standings {
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(26, 36, 51, 0.1);
+  text-align: left;
+}
+
+.balloon-drop-winner-standings-label {
+  margin: 0 0 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8a97a8;
+  text-align: center;
+}
+
+.balloon-drop-winner-teams {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+@media (max-width: 420px) {
+  .balloon-drop-winner-teams {
+    grid-template-columns: 1fr;
+  }
+}
+
+.balloon-drop-winner-team {
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: rgba(26, 36, 51, 0.04);
+  border: 1px solid rgba(26, 36, 51, 0.08);
+}
+
+.balloon-drop-winner-team--win {
+  background: color-mix(in srgb, var(--team-color) 10%, white);
+  border-color: color-mix(in srgb, var(--team-color) 45%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--team-color) 20%, transparent);
+}
+
+.balloon-drop-winner-team-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--team-color);
+}
+
+.balloon-drop-winner-team-members {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.balloon-drop-winner-team-status {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #8a97a8;
+}
+
+.balloon-drop-winner-team--win .balloon-drop-winner-team-status {
+  color: var(--team-color);
+}
+
+.balloon-drop-winner-ffa {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.balloon-drop-winner-ffa-row {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.balloon-drop-winner-ffa-row + .balloon-drop-winner-ffa-row {
+  margin-top: 0.25rem;
+}
+
+.balloon-drop-winner-ffa-row--win {
+  background: color-mix(in srgb, var(--win-accent) 12%, white);
+  font-weight: 600;
+}
+
+.balloon-drop-winner-ffa-rank {
+  width: 1.25rem;
+  font-variant-numeric: tabular-nums;
+  color: #8a97a8;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.balloon-drop-winner-ffa-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.balloon-drop-winner-ffa-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #8a97a8;
+}
+
+.balloon-drop-winner-ffa-row--win .balloon-drop-winner-ffa-status {
+  color: var(--win-accent);
+}
+
+.balloon-drop-winner-hint {
+  margin: 1.1rem 0 0;
+  font-size: 0.8rem;
+  color: #8a97a8;
+}
+
+/* Confetti + floating balloons */
+.balloon-drop-confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.balloon-drop-confetti-piece {
+  position: absolute;
+  top: -8%;
+  left: calc((var(--piece) * 3.7%) + 2%);
+  width: 8px;
+  height: 12px;
+  border-radius: 2px;
+  background: hsl(calc(var(--piece) * 13deg), 75%, 58%);
+  opacity: 0.85;
+  animation: balloon-drop-confetti-fall 2.8s linear infinite;
+  animation-delay: calc(var(--piece) * -0.12s);
+}
+
+@keyframes balloon-drop-confetti-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0.6;
+  }
+}
+
+.balloon-drop-winner-floaters {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.balloon-drop-float-balloon {
+  position: absolute;
+  width: 36px;
+  height: 44px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  opacity: 0.35;
+  animation: balloon-drop-float 6s ease-in-out infinite;
+}
+
+.balloon-drop-float-balloon--1 {
+  left: 8%;
+  bottom: 12%;
+  background: #ff8fab;
+  animation-delay: 0s;
+}
+
+.balloon-drop-float-balloon--2 {
+  right: 10%;
+  bottom: 20%;
+  background: #5dade2;
+  width: 28px;
+  height: 34px;
+  animation-delay: -2s;
+}
+
+.balloon-drop-float-balloon--3 {
+  left: 18%;
+  top: 15%;
+  background: #f39c12;
+  width: 24px;
+  height: 30px;
+  animation-delay: -4s;
+}
+
+@keyframes balloon-drop-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-4deg);
+  }
+  50% {
+    transform: translateY(-18px) rotate(4deg);
+  }
+}

@@ -1,45 +1,29 @@
 import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { LobbySettings } from '../../shared/platform';
-import { isBot } from '../../shared/games/bots';
+import { getResetLobbySettings } from '../../shared/platform';
+import { isBot, showsAsReady } from '../../shared/games/bots';
 import { MAX_PLAYERS } from '../../shared/constants';
 import { getLobbyGameDefinition } from '../../shared/games/registry';
 import { getSessionModeLabel } from '../../shared/session';
 import type { RoomState } from '../../shared/types';
+import LobbyClipboardIcon from './mobile/LobbyClipboardIcon';
 import LobbySettingsPanel from './LobbySettingsPanel';
 
 interface LobbyProps {
   state: RoomState;
   roomUrlBase: string;
+  onExit?: () => void;
   onKick?: (playerId: string) => void;
   onUpdateSettings?: (patch: Partial<LobbySettings>) => void;
   onAddBot?: () => void;
   onRemoveBot?: (botId: string) => void;
 }
 
-function ClipboardIcon() {
-  return (
-    <svg
-      className="lobby-url-icon"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <rect x="8" y="8" width="12" height="14" rx="2" stroke="currentColor" strokeWidth="1.75" />
-      <path
-        d="M6 16H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 export default function Lobby({
   state,
   roomUrlBase,
+  onExit,
   onKick,
   onUpdateSettings,
   onAddBot,
@@ -78,13 +62,25 @@ export default function Lobby({
     }
   };
 
+  const handleResetSettings = () => {
+    if (!onUpdateSettings) return;
+    onUpdateSettings(getResetLobbySettings(state.sessionMode));
+  };
+
   return (
     <div className="lobby">
       <div className="lobby-layout">
         <div className="panel lobby-panel lobby-panel--lobby">
-          <h2 className="lobby-room-heading">
-            Room Code: <span className="lobby-room-code">{state.id}</span>
-          </h2>
+          <div className="lobby-panel-header">
+            <h1 className="lobby-room-heading">
+              Room Code: <span className="lobby-room-code">{state.id}</span>
+            </h1>
+            {onExit && (
+              <button type="button" className="lobby-panel-btn" onClick={onExit}>
+                Exit
+              </button>
+            )}
+          </div>
           <p className="lobby-session-mode">{getSessionModeLabel(state.sessionMode)}</p>
 
           <div className="qr-panel">
@@ -98,23 +94,35 @@ export default function Lobby({
             aria-label={copied ? 'Room link copied' : 'Copy room link'}
           >
             <span className="lobby-url-text">{copied ? 'Copied to clipboard' : guestUrl}</span>
-            <ClipboardIcon />
+            <LobbyClipboardIcon />
           </button>
         </div>
 
         <div className="panel lobby-panel lobby-panel--players">
-          <h2>Players ({state.players.length}/{MAX_PLAYERS})</h2>
+          <div className="lobby-panel-header">
+            <h1>Players ({state.players.length}/{MAX_PLAYERS})</h1>
+            {onAddBot && (
+              <button
+                type="button"
+                className="lobby-panel-btn"
+                disabled={!canAddBot}
+                onClick={onAddBot}
+              >
+                Add bot
+              </button>
+            )}
+          </div>
           <p className="lobby-status">{statusText}</p>
           {state.players.length > 0 && (
             <ul className="player-list">
               {state.players.map((p) => (
-                <li key={p.id} className={p.ready ? 'ready' : ''}>
+                <li key={p.id} className={showsAsReady(p) ? 'ready' : ''}>
                   <span className="player-dot" style={{ background: p.color }} />
                   <span className="player-name">
                     {p.name}
                     {isBot(p.id) && <span className="bot-tag"> (bot)</span>}
                   </span>
-                  <span className="player-status">{p.ready ? 'Ready' : 'Waiting'}</span>
+                  <span className="player-status">{showsAsReady(p) ? 'Ready' : 'Waiting'}</span>
                   {isBot(p.id) && onRemoveBot && (
                     <button
                       type="button"
@@ -139,16 +147,6 @@ export default function Lobby({
               ))}
             </ul>
           )}
-          {onAddBot && (
-            <button
-              type="button"
-              className="game-mode-btn lobby-add-bot-btn"
-              disabled={!canAddBot}
-              onClick={onAddBot}
-            >
-              Add bot
-            </button>
-          )}
         </div>
 
         <div className="panel lobby-panel lobby-panel--games">
@@ -158,6 +156,7 @@ export default function Lobby({
                 sessionMode={state.sessionMode}
                 settings={state.lobbySettings}
                 onChange={onUpdateSettings}
+                onReset={handleResetSettings}
               />
             </div>
           )}

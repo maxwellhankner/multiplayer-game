@@ -2,9 +2,10 @@ import type { ComponentType } from 'react';
 import { GAMES } from '../../shared/games/registry';
 import type { GameClientModule, GameControllerProps, GameHostProps } from './types';
 import PlaceholderView from './placeholder/PlaceholderView';
-import { buttonHoldClient } from './button-hold/client';
+import { balloonDropClient } from './balloon-drop/client';
+import { coinRushClient } from './coin-rush/client';
 import { hoeDownDerbyClient } from './hoe-down-derby/client';
-import { tapCounterClient } from './tap-counter/client';
+import { scribbleTimeClient } from './scribble-time/client';
 
 function placeholderHost(gameId: string): ComponentType<GameHostProps> {
   return function Host() {
@@ -32,9 +33,10 @@ const placeholderModules = GAMES.filter((g) => g.status === 'placeholder').map((
 );
 
 const MODULES: GameClientModule[] = [
+  scribbleTimeClient,
   hoeDownDerbyClient,
-  tapCounterClient,
-  buttonHoldClient,
+  coinRushClient,
+  balloonDropClient,
   ...placeholderModules,
 ];
 
