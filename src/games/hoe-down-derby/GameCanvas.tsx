@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import type { RoomState } from '../../shared/types';
-import { COLORS, GAMEPLAY, LANE_LAYOUT, PLAYER_FIELD_LAYOUT, computeTrackLayout, getJumpHeightAtPhase, getLanesBackToFront } from '../../shared/constants';
-import { drawRoadTexture } from '../roadTexture';
+import type { RoomState } from '../../../shared/types';
+import { COLORS, GAMEPLAY, LANE_LAYOUT, PLAYER_FIELD_LAYOUT, computeTrackLayout, getJumpHeightAtPhase, getLanesBackToFront } from '../../../shared/constants';
+import { drawRoadTexture } from './roadTexture';
 
 interface GameCanvasProps {
   state: RoomState;

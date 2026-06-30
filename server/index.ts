@@ -6,22 +6,30 @@ import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 import { Server } from 'socket.io';
 import {
+  addBot,
   addPlayer,
+  canRoomAddBot,
   createRoom,
   getRoom,
   kickPlayer,
-  prepareRematch,
+  prepareLobbyReturn,
+  removeBot,
   returnToLobby,
   removePlayer,
   serializeRoom,
   setPlayerReady,
   setTrackWidth,
   tickRoom,
+  triggerHoldEndAction,
+  triggerHoldStartAction,
   triggerJump,
+  triggerTapAction,
+  updateLobbySettings,
 } from './game.js';
 import { getLocalIP, getLocalIPs } from './network.js';
-import { GAMEPLAY, MAX_PLAYERS, isPlayerColor, isTestBotColor } from '../shared/constants.js';
-import { TEST_MODE } from './bots.js';
+import { guestRoomUrl } from '../shared/routes.js';
+import { MAX_PLAYERS } from '../shared/constants.js';
+import type { LobbySettings, SessionMode } from '../shared/platform.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 3001;
@@ -57,19 +65,26 @@ app.get('/api/network', (_req, res) => {
   res.json({
     host,
     port: PORT,
-    joinUrl: `http://${host}:${PORT}/join`,
-    allHosts: allHosts.map((h) => `http://${h}:${PORT}/join`),
+    roomUrl: guestRoomUrl(`http://${host}:${PORT}`, ''),
+    allRoomUrls: allHosts.map((h) => guestRoomUrl(`http://${h}:${PORT}`, '')),
   });
 });
 
 io.on('connection', (socket) => {
-  socket.on('host:create', (cb: (state: ReturnType<typeof serializeRoom> | { error: string }) => void) => {
-    const room = createRoom();
-    socketRoom.set(socket.id, room.id);
-    hostRooms.set(room.id, socket.id);
-    socket.join(room.id);
-    cb(serializeRoom(room));
-  });
+  socket.on(
+    'host:create',
+    (
+      data: { sessionMode?: SessionMode },
+      cb: (state: ReturnType<typeof serializeRoom> | { error: string }) => void,
+    ) => {
+      const sessionMode = data?.sessionMode ?? 'pc-host';
+      const room = createRoom(sessionMode);
+      socketRoom.set(socket.id, room.id);
+      hostRooms.set(room.id, socket.id);
+      socket.join(room.id);
+      cb(serializeRoom(room));
+    },
+  );
 
   socket.on('host:rejoin', (roomId: string, cb: (state: ReturnType<typeof serializeRoom> | { error: string }) => void) => {
     const room = getRoom(roomId);
@@ -81,6 +96,17 @@ io.on('connection', (socket) => {
     hostRooms.set(room.id, socket.id);
     socket.join(room.id);
     cb(serializeRoom(room));
+  });
+
+  socket.on('host:lobby-settings', (settings: Partial<LobbySettings>) => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    if (hostRooms.get(roomId) !== socket.id) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (updateLobbySettings(room, settings)) {
+      io.to(roomId).emit('room:state', serializeRoom(room));
+    }
   });
 
   socket.on('host:track-width', (width: number) => {
@@ -107,7 +133,7 @@ io.on('connection', (socket) => {
   socket.on(
     'player:join',
     (
-      data: { roomId: string; name: string; color: string },
+      data: { roomId: string; name: string },
       cb: (result: { ok: boolean; playerId?: string; state?: ReturnType<typeof serializeRoom>; error?: string }) => void,
     ) => {
       const room = getRoom(data.roomId);
@@ -123,20 +149,8 @@ io.on('connection', (socket) => {
         cb({ ok: false, error: 'Room is full (8 players max)' });
         return;
       }
-      if (!isPlayerColor(data.color)) {
-        cb({ ok: false, error: 'Pick a valid color' });
-        return;
-      }
-      if (TEST_MODE && isTestBotColor(data.color)) {
-        cb({ ok: false, error: 'That color is reserved for test players' });
-        return;
-      }
-      if ([...room.players.values()].some((p) => p.color === data.color)) {
-        cb({ ok: false, error: 'That color was just taken' });
-        return;
-      }
 
-      const player = addPlayer(room, socket.id, data.name, data.color);
+      const player = addPlayer(room, socket.id, data.name);
       if (!player) {
         cb({ ok: false, error: 'Name taken or invalid' });
         return;
@@ -169,12 +183,52 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('player:tap', () => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (triggerTapAction(room, socket.id)) {
+      io.to(roomId).emit('room:state', serializeRoom(room));
+    }
+  });
+
+  socket.on('player:hold-start', () => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (triggerHoldStartAction(room, socket.id)) {
+      io.to(roomId).emit('room:state', serializeRoom(room));
+    }
+  });
+
+  socket.on('player:hold-end', () => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (triggerHoldEndAction(room, socket.id)) {
+      io.to(roomId).emit('room:state', serializeRoom(room));
+    }
+  });
+
   socket.on('game:rematch-ready', () => {
     const roomId = socketRoom.get(socket.id);
     if (!roomId) return;
     const room = getRoom(roomId);
     if (!room) return;
-    if (prepareRematch(room, socket.id)) {
+    if (prepareLobbyReturn(room, socket.id)) {
+      io.to(roomId).emit('room:state', serializeRoom(room));
+    }
+  });
+
+  socket.on('game:lobby-ready', () => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (prepareLobbyReturn(room, socket.id)) {
       io.to(roomId).emit('room:state', serializeRoom(room));
     }
   });
@@ -205,6 +259,27 @@ io.on('connection', (socket) => {
       socketRoom.delete(targetPlayerId);
     }
 
+    io.to(roomId).emit('room:state', serializeRoom(room));
+  });
+
+  socket.on('host:bot-add', () => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    if (hostRooms.get(roomId) !== socket.id) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (!canRoomAddBot(room)) return;
+    if (!addBot(room)) return;
+    io.to(roomId).emit('room:state', serializeRoom(room));
+  });
+
+  socket.on('host:bot-remove', (botId: string) => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    if (hostRooms.get(roomId) !== socket.id) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (!removeBot(room, botId)) return;
     io.to(roomId).emit('room:state', serializeRoom(room));
   });
 
@@ -261,13 +336,9 @@ async function start() {
   httpServer.listen(PORT, '0.0.0.0', () => {
     const ip = getLocalIP();
     const allIps = getLocalIPs();
-    console.log('\n  Hoe Down Derby server running');
+    console.log('\n  Multiplayer Browser Games server running');
     console.log(`  Local:   http://localhost:${PORT}`);
     console.log(`  Network: http://${ip}:${PORT}`);
-    console.log(`  Jump:    ${GAMEPLAY.JUMP_HEIGHT_PX}px peak, ${GAMEPLAY.JUMP_DURATION_MS}ms airtime`);
-    if (TEST_MODE) {
-      console.log('  Test mode: 3 bot players (DICK, SALLY, TOM) — unset TEST_MODE for real multiplayer');
-    }
     if (allIps.length > 1) {
       console.log('  Also try:');
       for (const addr of allIps.slice(1)) {

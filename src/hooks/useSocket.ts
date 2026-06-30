@@ -34,8 +34,8 @@ export function useNetworkInfo() {
         setInfo({
           host: window.location.hostname,
           port: Number(window.location.port) || 3001,
-          joinUrl: `${window.location.origin}/join`,
-          allHosts: [],
+          roomUrl: `${window.location.origin}/room`,
+          allRoomUrls: [],
         });
       });
   }, []);

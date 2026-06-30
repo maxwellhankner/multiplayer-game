@@ -1,6 +1,6 @@
-# Hoe Down Derby
+# Multiplayer Browser Games
 
-A Jackbox-style multiplayer horse jumping game. The desktop hosts the game and displays the race; phones connect as controllers via QR code.
+A platform for couch-co-op and remote party games in the browser. One device hosts the lobby; others join as controllers. **Hoe Down Derby** is the first playable game.
 
 ## Quick start
 
@@ -9,27 +9,16 @@ npm install
 npm run dev
 ```
 
-1. Open **http://localhost:3001** on your computer (host screen).
-2. Scan the QR code with your phone (same Wi-Fi network).
-3. Enter a username, tap **Ready**, then **Start Race**.
-4. Tap **JUMP** on your phone to clear gates and barrels.
+1. Open **http://localhost:3001** → **Host Lobby** or **Join Lobby**
+2. For couch play: host on PC, phones scan the QR code (same local network for PC Host mode)
+3. In the lobby, use **Add bot** to fill seats for solo testing
+4. Everyone taps **Ready** to start
 
-> **Important:** Use port **3001** on both devices — not 5173.
+> Use port **3001** on all devices — not 5173.
 
-## Phone can't connect?
+## Solo testing with bots
 
-- Confirm both devices are on the **same Wi-Fi** (not cellular).
-- Guest/public Wi-Fi often blocks phone ↔ laptop traffic — try a home network or phone hotspot.
-- On Mac: **System Settings → Network → Firewall** — allow incoming connections for Node/tsx.
-- Type the join URL manually on your phone if the QR code fails (shown on the lobby screen).
-
-## Solo development (bot players)
-
-To test without extra phones, run with three auto-jumping bot riders:
-
-```bash
-TEST_MODE=true npm run dev
-```
+In the host lobby, click **Add bot** to add AI players (limits depend on the selected game). Bots auto-ready when you ready up. Remove bots with **×** on their row.
 
 ## Production
 
@@ -38,11 +27,12 @@ npm run build
 npm start
 ```
 
-Serves everything on port 3001.
+## Project layout
 
-## Game rules
+See [development.md](./development.md) for architecture, game modules, and roadmap.
+
+## Hoe Down Derby rules
 
 - 3 apples (lives) per player
 - Hit a gate or barrel → lose 1 apple
-- Last player standing wins (backflip + confetti)
-- Solo mode: play until you run out of apples
+- Last player standing wins

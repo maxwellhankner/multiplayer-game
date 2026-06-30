@@ -1,4 +1,4 @@
-import type { RoomState } from '../../shared/types';
+import type { RoomState } from '../../../shared/types';
 
 interface WinnerScreenProps {
   state: RoomState;
@@ -22,7 +22,7 @@ export default function WinnerScreen({ state }: WinnerScreenProps) {
             <p>Everyone ran out of apples!</p>
           </>
         )}
-        <p className="rematch-hint">Everyone tap Ready on their phones to play again.</p>
+        <p className="rematch-hint">Everyone tap Back to lobby on their phones.</p>
         <ul className="final-standings">
           {state.players.map((p) => (
             <li key={p.id}>

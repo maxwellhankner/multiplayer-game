@@ -1,3 +1,9 @@
+import type { LobbySettings } from './platform';
+import type { SessionMode } from './session';
+
+export type { LobbySettings } from './platform';
+export type { SessionMode } from './session';
+
 export type GamePhase = 'lobby' | 'countdown' | 'playing' | 'winner';
 
 export interface PlayerState {
@@ -12,6 +18,11 @@ export interface PlayerState {
   invulnUntil: number;
   flipPhase: number;
   color: string;
+  /** Tap count or best hold duration (ms) for mini-games */
+  score: number;
+  holding: boolean;
+  /** Timestamp when current hold started; 0 when not holding */
+  holdStart: number;
 }
 
 export interface ObstacleState {
@@ -25,6 +36,9 @@ export interface ObstacleState {
 export interface RoomState {
   id: string;
   phase: GamePhase;
+  sessionMode: SessionMode;
+  lobbySettings: LobbySettings;
+  activeGameId: string | null;
   players: PlayerState[];
   obstacles: ObstacleState[];
   scrollX: number;
@@ -32,12 +46,12 @@ export interface RoomState {
   winnerId: string | null;
   winnerName: string | null;
   gameTime: number;
-  testMode?: boolean;
 }
 
 export interface NetworkInfo {
   host: string;
   port: number;
-  joinUrl: string;
-  allHosts: string[];
+  /** Base URL for guests, e.g. http://192.168.1.5:3001/room */
+  roomUrl: string;
+  allRoomUrls: string[];
 }

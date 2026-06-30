@@ -1,25 +1,29 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { RoomState } from '../../shared/types';
-import { getTestBotColors } from '../../shared/constants';
-import ColorPicker from './ColorPicker';
+import { isBot } from '../../shared/games/bots';
+import { getSessionModeLabel } from '../../shared/session';
+import GameControllerRouter from '../games/GameControllerRouter';
 
 interface ControllerUIProps {
   state: RoomState | null;
   playerId: string | null;
   connected: boolean;
   booted?: boolean;
-  onJoin: (name: string, color: string) => void;
+  onJoin: (name: string) => void;
   onReady: () => void;
   onJump: () => void;
-  onRematchReady: () => void;
+  onTap: () => void;
+  onHoldStart: () => void;
+  onHoldEnd: () => void;
+  onLobbyReady: () => void;
   joinError: string | null;
   roomId: string;
+  onLeave?: () => void;
 }
 
-function ControllerShell({ children, className }: { children: ReactNode; className?: string }) {
+function PlatformController({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className="controller">
-      <img src="/cowgirl-image.svg.png" alt="" className="controller-bg-image" />
+    <div className="platform-shell controller">
       <div className={`controller-inner${className ? ` ${className}` : ''}`}>{children}</div>
     </div>
   );
@@ -33,38 +37,19 @@ export default function ControllerUI({
   onJoin,
   onReady,
   onJump,
-  onRematchReady,
+  onTap,
+  onHoldStart,
+  onHoldEnd,
+  onLobbyReady,
   joinError,
   roomId,
+  onLeave,
 }: ControllerUIProps) {
   const [name, setName] = useState('');
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
-
-  const takenColors = useMemo(() => {
-    const taken = new Set(state?.players.map((p) => p.color) ?? []);
-    if (state?.testMode) {
-      for (const color of getTestBotColors()) {
-        taken.add(color);
-      }
-    }
-    return taken;
-  }, [state?.players, state?.testMode]);
-
-  useEffect(() => {
-    if (selectedColor && takenColors.has(selectedColor)) {
-      setSelectedColor(null);
-    }
-  }, [selectedColor, takenColors]);
-
-  useEffect(() => {
-    if (joinError?.toLowerCase().includes('color')) {
-      setSelectedColor(null);
-    }
-  }, [joinError]);
 
   if (!connected) {
     return (
-      <div className="controller">
+      <div className="platform-shell controller">
         <p className="status-msg">Connecting…</p>
       </div>
     );
@@ -72,15 +57,11 @@ export default function ControllerUI({
 
   if (booted) {
     return (
-      <div className="controller controller-booted">
+      <div className="platform-shell controller">
         <div className="boot-screen">
-          <div className="boot-icon" aria-hidden="true">
-            <img src="/cowboy-boot-image.png" alt="" />
-          </div>
-          <h1 className="boot-title">You got the boot!</h1>
-          <p className="boot-code">403</p>
-          <p className="status-msg">The host removed you from the room.</p>
-          <p className="status-msg boot-hint">Close this page. When you&apos;re ready, scan the QR code with your camera app.</p>
+          <h1 className="boot-title">Removed from room</h1>
+          <p className="status-msg">The host removed you from the lobby.</p>
+          <p className="boot-hint">Scan the QR code again to rejoin.</p>
         </div>
       </div>
     );
@@ -89,46 +70,53 @@ export default function ControllerUI({
   if (!playerId) {
     if (!state) {
       return (
-        <ControllerShell className="controller-signup">
-          <h1 className="controller-title">Hoe Down Derby</h1>
-          <p className="room-label">Room {roomId}</p>
-          <p className="status-msg">Loading room…</p>
-        </ControllerShell>
+        <PlatformController className="controller-signup">
+          <h1 className="platform-title">Join lobby</h1>
+          <p className="hint">Room {roomId}</p>
+          <p className="status-msg">{joinError ?? 'Loading room…'}</p>
+          {onLeave && (
+            <button type="button" className="btn btn-secondary" onClick={onLeave}>
+              Change room code
+            </button>
+          )}
+        </PlatformController>
       );
     }
 
     return (
-      <ControllerShell className="controller-signup">
-        <h1 className="controller-title">Hoe Down Derby</h1>
-        <p className="room-label">Room {roomId}</p>
+      <PlatformController className="controller-signup">
+        <h1 className="platform-title">Join lobby</h1>
+        <p className="hint">Room {roomId}</p>
+        <span className="badge">{getSessionModeLabel(state.sessionMode)}</span>
         <input
           type="text"
-          placeholder="Enter your name"
+          placeholder="Your name"
           value={name}
           maxLength={16}
           onChange={(e) => setName(e.target.value)}
-          className="name-input"
+          className="text-input"
         />
-        <ColorPicker
-          takenColors={takenColors}
-          selected={selectedColor}
-          onSelect={setSelectedColor}
-        />
+        <p className="hint">A color is assigned when you join.</p>
         {joinError && <p className="error">{joinError}</p>}
         <button
           className="btn btn-primary btn-large"
-          disabled={!name.trim() || !selectedColor}
-          onClick={() => selectedColor && onJoin(name.trim(), selectedColor)}
+          disabled={!name.trim()}
+          onClick={() => onJoin(name.trim())}
         >
-          Join Room
+          Join
         </button>
-      </ControllerShell>
+        {onLeave && (
+          <button type="button" className="btn btn-secondary" onClick={onLeave}>
+            Change room code
+          </button>
+        )}
+      </PlatformController>
     );
   }
 
   if (!state) {
     return (
-      <div className="controller">
+      <div className="platform-shell controller">
         <p className="status-msg">Reconnecting…</p>
       </div>
     );
@@ -137,7 +125,7 @@ export default function ControllerUI({
   const me = state.players.find((p) => p.id === playerId);
   if (!me) {
     return (
-      <div className="controller">
+      <div className="platform-shell controller">
         <p className="status-msg">Reconnecting…</p>
       </div>
     );
@@ -147,102 +135,61 @@ export default function ControllerUI({
     const waitingOnOthers = me.ready && state.players.some((p) => !p.ready);
 
     return (
-      <ControllerShell className="controller-lobby">
-        <h1 className="controller-title">Hoe Down Derby</h1>
-        <p className="controller-greeting">Howdy, {me.name}!</p>
-        <p className="room-label">Room {state.id}</p>
+      <PlatformController className="controller-lobby">
+        <h1 className="platform-title">Lobby</h1>
+        <p className="hint">
+          {me.name} · Room {state.id}
+        </p>
         <div className="lobby-players-mobile">
           <h3>Players</h3>
           {state.players.map((p) => (
             <div key={p.id} className={`mobile-player ${p.ready ? 'ready' : ''}`}>
               <span style={{ color: p.color }}>●</span> {p.name}
+              {isBot(p.id) ? ' (bot)' : ''}
               {p.ready ? ' ✓' : ''}
             </div>
           ))}
         </div>
         <div className="controller-lobby-footer">
-          {waitingOnOthers && (
-            <p className="status-msg">Waiting for everyone else…</p>
-          )}
-          <button
-            className="btn btn-primary btn-large"
-            disabled={me.ready}
-            onClick={onReady}
-          >
+          {waitingOnOthers && <p className="status-msg">Waiting for others…</p>}
+          <button className="btn btn-primary btn-large" disabled={me.ready} onClick={onReady}>
             Ready
           </button>
         </div>
-      </ControllerShell>
+      </PlatformController>
     );
   }
 
-  if (state.phase === 'countdown') {
+  if (state.phase === 'countdown' || state.phase === 'playing') {
     return (
-      <div className="controller controller-game">
-        <div className="controller-game-center">
-          <div className="countdown-mobile">
-            {state.countdown > 0 ? state.countdown : 'GO!'}
-          </div>
-          <p className="controller-game-hint">Get ready to jump!</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (state.phase === 'playing') {
-    return (
-      <div className="controller controller-game">
-        <div className="hud">
-          <span>{me.name}</span>
-          <span className="apples-display">
-            {[0, 1, 2].map((i) => (
-              <span key={i} className={i < me.lives ? 'filled' : 'empty'}>
-                🍎
-              </span>
-            ))}
-          </span>
-        </div>
-        <div className="controller-game-center">
-          {me.eliminated ? (
-            <div className="eliminated-msg">
-              <p>You're out!</p>
-              <p>Watch the main screen.</p>
-            </div>
-          ) : (
-            <button className="btn-jump" onTouchStart={(e) => { e.preventDefault(); onJump(); }} onClick={onJump}>
-              JUMP
-            </button>
-          )}
-        </div>
-      </div>
+      <GameControllerRouter
+        state={state}
+        playerId={playerId}
+        onJump={onJump}
+        onTap={onTap}
+        onHoldStart={onHoldStart}
+        onHoldEnd={onHoldEnd}
+      />
     );
   }
 
   if (state.phase === 'winner') {
-    const isWinner = state.winnerId === playerId;
     const waitingOnOthers = me.ready && state.players.some((p) => !p.ready);
 
     return (
-      <ControllerShell>
-        {isWinner ? (
-          <>
-            <div className="trophy-big">🏆</div>
-            <h1>You Win!</h1>
-          </>
-        ) : (
-          <h1>{state.winnerName ?? 'Nobody'} wins!</h1>
-        )}
-        <button
-          className="btn btn-primary btn-large"
-          disabled={me.ready}
-          onClick={onRematchReady}
-        >
-          Ready
+      <PlatformController>
+        <h1 className="platform-title">
+          {state.winnerId === playerId
+            ? 'You win!'
+            : state.winnerId
+              ? `${state.winnerName} wins`
+              : 'Round over'}
+        </h1>
+        <button className="btn btn-primary btn-large" disabled={me.ready} onClick={onLobbyReady}>
+          Back to lobby
         </button>
-        {waitingOnOthers && (
-          <p className="status-msg">Waiting for everyone else…</p>
-        )}
-      </ControllerShell>
+        {waitingOnOthers && <p className="status-msg">Waiting for others…</p>}
+      </PlatformController>
     );
   }
 

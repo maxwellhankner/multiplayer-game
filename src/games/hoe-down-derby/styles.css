@@ -1,0 +1,199 @@
+/* Hoe Down Derby — western theme. Scoped to .hoe-down-derby only. */
+
+@import url('https://fonts.googleapis.com/css2?family=Rye&family=Roboto+Condensed:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+.hoe-down-derby {
+  --saddle: #3d2314;
+  --leather: #5c3317;
+  --rust: #b7410e;
+  --burnt: #c65d07;
+  --wheat: #f5deb3;
+  --tan: #d2b48c;
+  --cream: #faf3e8;
+  --denim-dark: #1a2f44;
+  --gold: #daa520;
+  --text-muted: #c4a882;
+  --font-display: 'Rye', 'Times New Roman', serif;
+  --font-body: 'Roboto Condensed', 'Arial Narrow', sans-serif;
+
+  font-family: var(--font-body);
+  color: var(--wheat);
+}
+
+.hoe-down-derby h1,
+.hoe-down-derby h2,
+.hoe-down-derby .btn-jump,
+.hoe-down-derby .countdown-mobile,
+.hoe-down-derby .winner-card h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+}
+
+/* Host game view */
+.hoe-down-derby.game-view {
+  position: relative;
+  flex: 1;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--denim-dark);
+}
+
+.hoe-down-derby .game-canvas {
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  display: block;
+}
+
+/* Winner overlay */
+.hoe-down-derby .winner-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(45, 24, 16, 0.65);
+  pointer-events: none;
+}
+
+.hoe-down-derby .winner-card {
+  background: var(--leather);
+  border: 3px solid var(--gold);
+  border-radius: 16px;
+  padding: 2.5rem 3rem;
+  text-align: center;
+  max-width: 480px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.hoe-down-derby .trophy {
+  font-size: 4rem;
+  margin-bottom: 0.5rem;
+}
+
+.hoe-down-derby .winner-card h2 {
+  font-size: 2.5rem;
+  color: var(--gold);
+  margin-bottom: 0.5rem;
+}
+
+.hoe-down-derby .rematch-hint {
+  color: var(--tan);
+  margin: 1rem 0;
+}
+
+.hoe-down-derby .final-standings {
+  list-style: none;
+  text-align: left;
+}
+
+.hoe-down-derby .final-standings li {
+  padding: 0.4rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hoe-down-derby .player-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Mobile controller — in-game */
+.hoe-down-derby.controller-game {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, var(--saddle), var(--denim-dark));
+  padding: 0;
+}
+
+.hoe-down-derby .controller-game-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  width: 100%;
+  min-height: 0;
+  padding: 1.5rem;
+  padding-top: calc(4.75rem + env(safe-area-inset-top, 0px));
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
+}
+
+.hoe-down-derby .controller-game-hint {
+  color: var(--tan);
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.hoe-down-derby .hud {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: rgba(45, 24, 16, 0.85);
+  font-weight: 600;
+  color: var(--wheat);
+}
+
+.hoe-down-derby .countdown-mobile {
+  font-size: 6rem;
+  color: var(--gold);
+  text-shadow: 2px 2px 0 var(--rust);
+  letter-spacing: 0.04em;
+}
+
+.hoe-down-derby .btn-jump {
+  width: min(280px, 80vw);
+  height: min(280px, 50vh);
+  border-radius: 50%;
+  border: 4px solid var(--gold);
+  background: linear-gradient(145deg, var(--burnt), var(--rust));
+  color: var(--cream);
+  font-size: 2.25rem;
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(183, 65, 14, 0.45);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.hoe-down-derby .btn-jump:active {
+  transform: scale(0.95);
+  box-shadow: 0 4px 16px rgba(183, 65, 14, 0.35);
+}
+
+.hoe-down-derby .apples-display {
+  font-size: 1.5rem;
+  letter-spacing: 0.25rem;
+}
+
+.hoe-down-derby .apples-display .empty {
+  opacity: 0.25;
+  filter: grayscale(1);
+}
+
+.hoe-down-derby .eliminated-msg {
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.hoe-down-derby .eliminated-msg p:first-child {
+  font-size: 2rem;
+  color: var(--rust);
+  margin-bottom: 0.5rem;
+  font-family: var(--font-display);
+}

@@ -1,8 +1,18 @@
-import type { GamePhase, ObstacleState, PlayerState, RoomState } from '../shared/types.js';
-import { GAME_CONSTANTS, GAMEPLAY, getHorseHitboxBounds, getJumpHeightAtPhase, MAX_PLAYERS, PLAYER_COLORS, isPlayerColor, isTestBotColor } from '../shared/constants.js';
-import { BOT_JUMP_DISTANCE, BOT_PLAYERS, isBot, TEST_MODE } from './bots.js';
-
-const PLAYER_COLORS_LIST = PLAYER_COLORS;
+import type { GamePhase, LobbySettings, ObstacleState, PlayerState, RoomState, SessionMode } from '../shared/types.js';
+import { GAME_CONSTANTS, GAMEPLAY, getHorseHitboxBounds, getJumpHeightAtPhase, MAX_PLAYERS, PLAYER_COLORS } from '../shared/constants.js';
+import { isBot } from '../shared/games/bots.js';
+import { getGameById, getGamesForSessionMode } from '../shared/games/registry.js';
+import { DEFAULT_LOBBY_SETTINGS, resolveGameId } from '../shared/platform.js';
+import { getGameServerModule } from './games/registry.js';
+import { clearButtonHoldBots, tickButtonHold, triggerHoldEnd, triggerHoldStart } from './games/button-hold/gameplay.js';
+import { resetScoreGamePlayers } from './games/score-game.js';
+import { clearTapCounterBots, tickTapCounter, triggerTap } from './games/tap-counter/gameplay.js';
+import {
+  addBotToRoom,
+  canAddBot,
+  removeBotFromRoom,
+  setBotsReady,
+} from './room/bots.js';
 
 const MAX_LIVES = 3;
 const SCROLL_SPEED = 5;
@@ -13,6 +23,9 @@ const COUNTDOWN_SECONDS = 3;
 interface Room {
   id: string;
   phase: GamePhase;
+  sessionMode: SessionMode;
+  lobbySettings: LobbySettings;
+  activeGameId: string | null;
   players: Map<string, PlayerState>;
   obstacles: ObstacleState[];
   scrollX: number;
@@ -49,14 +62,29 @@ function createPlayer(id: string, name: string, lane: number, color: string): Pl
     invulnUntil: 0,
     flipPhase: 0,
     color,
+    score: 0,
+    holding: false,
+    holdStart: 0,
   };
 }
 
-function isColorTaken(room: Room, color: string, exceptId?: string): boolean {
-  return [...room.players.values()].some((p) => p.id !== exceptId && p.color === color);
+function pickRandomColor(room: Room): string {
+  const used = new Set([...room.players.values()].map((p) => p.color));
+  const available = PLAYER_COLORS.filter((c) => !used.has(c));
+
+  if (available.length > 0) {
+    return available[Math.floor(Math.random() * available.length)];
+  }
+
+  const fallback = PLAYER_COLORS.filter((c) => !used.has(c));
+  if (fallback.length > 0) {
+    return fallback[Math.floor(Math.random() * fallback.length)];
+  }
+
+  return PLAYER_COLORS[room.players.size % PLAYER_COLORS.length];
 }
 
-export function createRoom(): Room {
+export function createRoom(sessionMode: SessionMode = 'pc-host'): Room {
   let id = randomRoomId();
   while (rooms.has(id)) {
     id = randomRoomId();
@@ -65,6 +93,9 @@ export function createRoom(): Room {
   const room: Room = {
     id,
     phase: 'lobby',
+    sessionMode,
+    lobbySettings: { ...DEFAULT_LOBBY_SETTINGS, gamePool: [...DEFAULT_LOBBY_SETTINGS.gamePool] },
+    activeGameId: null,
     players: new Map(),
     obstacles: [],
     scrollX: 0,
@@ -78,55 +109,33 @@ export function createRoom(): Room {
   };
 
   rooms.set(id, room);
-  ensureTestBots(room);
   return room;
 }
 
-export { TEST_MODE };
-
-function ensureTestBots(room: Room): void {
-  if (!TEST_MODE) return;
-
-  for (let i = 0; i < BOT_PLAYERS.length; i++) {
-    const { id, name } = BOT_PLAYERS[i];
-    let player = room.players.get(id);
-    if (!player) {
-      player = createPlayer(id, name, i, PLAYER_COLORS_LIST[i] ?? PLAYER_COLORS_LIST[0]);
-      room.players.set(id, player);
-    }
-    player.lane = i;
-    player.color = PLAYER_COLORS_LIST[i] ?? PLAYER_COLORS_LIST[0];
-  }
-
-  let lane = BOT_PLAYERS.length;
-  for (const player of room.players.values()) {
-    if (isBot(player.id)) continue;
-    player.lane = lane;
-    lane += 1;
-  }
+function botContext(room: Room) {
+  return {
+    sessionMode: room.sessionMode,
+    lobbySettings: room.lobbySettings,
+    players: room.players,
+    phase: room.phase,
+  };
 }
 
-function updateBotAI(room: Room): void {
-  if (!TEST_MODE || room.phase !== 'playing') return;
+export function addBot(room: Room): boolean {
+  const bot = addBotToRoom(botContext(room));
+  if (!bot) return false;
+  reindexLanes(room);
+  return true;
+}
 
-  const horseX = getHorseScreenX(room.trackWidth);
+export function removeBot(room: Room, botId: string): boolean {
+  if (!removeBotFromRoom(botContext(room), botId)) return false;
+  reindexLanes(room);
+  return true;
+}
 
-  for (const player of room.players.values()) {
-    if (!isBot(player.id) || player.eliminated || player.isJumping) continue;
-
-    const upcoming = room.obstacles
-      .filter((o) => o.lane === player.lane)
-      .map((o) => ({ o, screenX: o.worldX - room.scrollX }))
-      .filter(({ screenX }) => screenX > horseX - 30 && screenX < horseX + 320)
-      .sort((a, b) => a.screenX - b.screenX)[0];
-
-    if (!upcoming) continue;
-
-    const distance = upcoming.screenX - horseX;
-    if (distance > 0 && distance <= BOT_JUMP_DISTANCE) {
-      triggerJump(room, player.id);
-    }
-  }
+export function canRoomAddBot(room: Room): boolean {
+  return canAddBot(botContext(room));
 }
 
 export function getRoom(id: string): Room | undefined {
@@ -137,7 +146,7 @@ export function removeRoom(id: string): void {
   rooms.delete(id.toUpperCase());
 }
 
-export function addPlayer(room: Room, socketId: string, name: string, color: string): PlayerState | null {
+export function addPlayer(room: Room, socketId: string, name: string): PlayerState | null {
   if (isBot(socketId)) return null;
   if (room.phase !== 'lobby' && room.phase !== 'winner') {
     return null;
@@ -146,21 +155,16 @@ export function addPlayer(room: Room, socketId: string, name: string, color: str
 
   const trimmed = name.trim().slice(0, 16);
   if (!trimmed) return null;
-  if (!isPlayerColor(color)) return null;
-  if (TEST_MODE && isTestBotColor(color)) return null;
-  if (isColorTaken(room, color)) return null;
 
   const existing = [...room.players.values()].find(
     (p) => p.name.toLowerCase() === trimmed.toLowerCase(),
   );
   if (existing) return null;
 
+  const color = pickRandomColor(room);
   const player = createPlayer(socketId, trimmed, 0, color);
   room.players.set(socketId, player);
-  ensureTestBots(room);
-  if (!TEST_MODE) {
-    reindexLanes(room);
-  }
+  reindexLanes(room);
   return player;
 }
 
@@ -168,7 +172,6 @@ export function removePlayer(room: Room, socketId: string): void {
   if (isBot(socketId)) return;
   room.players.delete(socketId);
   reindexLanes(room);
-  ensureTestBots(room);
 }
 
 export function kickPlayer(room: Room, targetId: string): boolean {
@@ -192,14 +195,18 @@ function allPlayersReady(room: Room): boolean {
   return [...room.players.values()].every((p) => p.ready);
 }
 
-function readyBotsForTestMode(room: Room): void {
-  if (!TEST_MODE) return;
-  for (const p of room.players.values()) {
-    if (isBot(p.id)) p.ready = true;
-  }
+function readyBots(room: Room): void {
+  setBotsReady(room.players);
 }
 
 function beginRace(room: Room): void {
+  if (getGamesForSessionMode(room.sessionMode).length === 0) return;
+
+  const gameId = resolveGameId(room.lobbySettings, room.sessionMode);
+  const game = getGameById(gameId);
+  if (!game || game.status !== 'playable') return;
+
+  room.activeGameId = gameId;
   room.phase = 'countdown';
   room.countdown = COUNTDOWN_SECONDS;
   room.countdownTimer = 0;
@@ -209,14 +216,26 @@ function beginRace(room: Room): void {
   room.lastSpawnX = 0;
   room.winnerId = null;
 
+  const isScoreGame = gameId === 'tap-counter' || gameId === 'button-hold';
+  if (isScoreGame) {
+    clearTapCounterBots();
+    clearButtonHoldBots();
+    resetScoreGamePlayers(room.players);
+  }
+
   for (const p of room.players.values()) {
-    p.lives = MAX_LIVES;
-    p.eliminated = false;
-    p.jumpPhase = 0;
-    p.isJumping = false;
-    p.invulnUntil = 0;
-    p.flipPhase = 0;
     p.ready = false;
+    if (!isScoreGame) {
+      p.lives = MAX_LIVES;
+      p.eliminated = false;
+      p.jumpPhase = 0;
+      p.isJumping = false;
+      p.invulnUntil = 0;
+      p.flipPhase = 0;
+    }
+    p.score = 0;
+    p.holding = false;
+    p.holdStart = 0;
   }
 }
 
@@ -225,7 +244,7 @@ export function setPlayerReady(room: Room, socketId: string): boolean {
   if (!player || room.phase !== 'lobby' || player.ready) return false;
 
   player.ready = true;
-  readyBotsForTestMode(room);
+  readyBots(room);
 
   if (allPlayersReady(room)) {
     beginRace(room);
@@ -323,6 +342,7 @@ function checkWinner(room: Room): void {
 }
 
 export function triggerJump(room: Room, socketId: string): boolean {
+  if (room.activeGameId !== 'hoe-down-derby') return false;
   const player = room.players.get(socketId);
   if (!player || room.phase !== 'playing' || player.eliminated || player.isJumping) {
     return false;
@@ -332,21 +352,40 @@ export function triggerJump(room: Room, socketId: string): boolean {
   return true;
 }
 
-export function prepareRematch(room: Room, socketId: string): boolean {
+export function triggerTapAction(room: Room, socketId: string): boolean {
+  if (room.activeGameId !== 'tap-counter') return false;
+  return triggerTap(room, socketId);
+}
+
+export function triggerHoldStartAction(room: Room, socketId: string): boolean {
+  if (room.activeGameId !== 'button-hold') return false;
+  return triggerHoldStart(room, socketId, Date.now());
+}
+
+export function triggerHoldEndAction(room: Room, socketId: string): boolean {
+  if (room.activeGameId !== 'button-hold') return false;
+  return triggerHoldEnd(room, socketId, Date.now());
+}
+
+export function prepareLobbyReturn(room: Room, socketId: string): boolean {
   const player = room.players.get(socketId);
   if (!player || room.phase !== 'winner' || player.ready) return false;
 
   player.ready = true;
-  readyBotsForTestMode(room);
+  readyBots(room);
 
   if (!allPlayersReady(room)) return true;
 
-  beginRace(room);
+  returnToLobby(room);
   return true;
 }
 
+/** @deprecated Use prepareLobbyReturn — kept for socket event name compatibility */
+export const prepareRematch = prepareLobbyReturn;
+
 function resetRoomToLobby(room: Room): void {
   room.phase = 'lobby';
+  room.activeGameId = null;
   room.winnerId = null;
   room.obstacles = [];
   room.scrollX = 0;
@@ -354,6 +393,8 @@ function resetRoomToLobby(room: Room): void {
   room.lastSpawnX = 0;
   room.countdown = COUNTDOWN_SECONDS;
   room.countdownTimer = 0;
+  clearTapCounterBots();
+  clearButtonHoldBots();
 
   for (const p of room.players.values()) {
     p.ready = false;
@@ -363,15 +404,39 @@ function resetRoomToLobby(room: Room): void {
     p.jumpPhase = 0;
     p.isJumping = false;
     p.invulnUntil = 0;
+    p.score = 0;
+    p.holding = false;
+    p.holdStart = 0;
+    if (isBot(p.id)) p.ready = true;
   }
-
-  ensureTestBots(room);
 }
 
 export function returnToLobby(room: Room): boolean {
   if (room.phase === 'lobby') return false;
   resetRoomToLobby(room);
   return true;
+}
+
+function runGameBotTick(room: Room, dt: number): void {
+  const module = getGameServerModule(room.activeGameId);
+  if (!module?.tickBots) return;
+
+  const bots = [...room.players.values()].filter((p) => isBot(p.id));
+  if (bots.length === 0) return;
+
+  module.tickBots(bots, {
+    room: {
+      phase: room.phase,
+      activeGameId: room.activeGameId,
+      scrollX: room.scrollX,
+      trackWidth: room.trackWidth,
+      obstacles: room.obstacles,
+    },
+    triggerJump: (playerId) => {
+      triggerJump(room, playerId);
+    },
+    getHorseScreenX,
+  }, dt);
 }
 
 export function tickRoom(room: Room, dt: number): void {
@@ -391,6 +456,22 @@ export function tickRoom(room: Room, dt: number): void {
   }
 
   if (room.phase === 'playing') {
+    if (room.activeGameId === 'tap-counter') {
+      tickTapCounter(room, dt);
+      runGameBotTick(room, dt);
+      return;
+    }
+
+    if (room.activeGameId === 'button-hold') {
+      tickButtonHold(room, dt, now);
+      runGameBotTick(room, dt);
+      return;
+    }
+
+    if (room.activeGameId !== 'hoe-down-derby') {
+      return;
+    }
+
     room.gameTime += dt;
     room.scrollX += SCROLL_SPEED * (dt / 16.67);
 
@@ -400,7 +481,7 @@ export function tickRoom(room: Room, dt: number): void {
 
     room.obstacles = room.obstacles.filter((o) => o.worldX - room.scrollX > -100);
 
-    updateBotAI(room);
+    runGameBotTick(room, dt);
 
     for (const player of room.players.values()) {
       if (player.isJumping) {
@@ -438,11 +519,35 @@ export function tickRoom(room: Room, dt: number): void {
   }
 }
 
+export function updateLobbySettings(room: Room, patch: Partial<LobbySettings>): boolean {
+  if (room.phase !== 'lobby') return false;
+
+  const next: LobbySettings = {
+    ...room.lobbySettings,
+    ...patch,
+    gamePool: patch.gamePool ? [...patch.gamePool] : [...room.lobbySettings.gamePool],
+  };
+
+  room.lobbySettings = next;
+
+  for (const player of room.players.values()) {
+    player.ready = false;
+  }
+
+  return true;
+}
+
 export function serializeRoom(room: Room): RoomState {
   const winner = room.winnerId ? room.players.get(room.winnerId) : null;
   return {
     id: room.id,
     phase: room.phase,
+    sessionMode: room.sessionMode,
+    lobbySettings: {
+      ...room.lobbySettings,
+      gamePool: [...room.lobbySettings.gamePool],
+    },
+    activeGameId: room.activeGameId,
     players: [...room.players.values()].sort((a, b) => a.lane - b.lane),
     obstacles: room.obstacles,
     scrollX: room.scrollX,
@@ -450,6 +555,5 @@ export function serializeRoom(room: Room): RoomState {
     winnerId: room.winnerId,
     winnerName: winner?.name ?? null,
     gameTime: room.gameTime,
-    testMode: TEST_MODE,
   };
 }

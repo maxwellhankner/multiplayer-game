@@ -1,4 +1,4 @@
-import { COLORS } from '../shared/constants';
+import { COLORS } from '../../../shared/constants';
 
 const CELL_SIZE = 72;
 const MARGIN = 100;

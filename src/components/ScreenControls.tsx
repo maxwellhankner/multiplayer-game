@@ -1,34 +1,57 @@
 import { useFullscreen } from '../hooks/useFullscreen';
 
 interface ScreenControlsProps {
+  /** Return to app home (/) */
   onHome?: () => void;
+  /** Go back one step (e.g. setup → home) */
+  onBack?: () => void;
+  showFullscreen?: boolean;
 }
 
-export default function ScreenControls({ onHome }: ScreenControlsProps) {
+export default function ScreenControls({
+  onHome,
+  onBack,
+  showFullscreen = true,
+}: ScreenControlsProps) {
   const { isFullscreen, toggleFullscreen } = useFullscreen();
 
+  if (!onHome && !onBack && !showFullscreen) return null;
+
   return (
-    <div className="screen-controls">
+    <nav className="screen-controls" aria-label="Screen menu">
+      {onBack && (
+        <button
+          type="button"
+          className="screen-btn"
+          onClick={onBack}
+          aria-label="Go back"
+          title="Back"
+        >
+          ←
+        </button>
+      )}
       {onHome && (
         <button
           type="button"
           className="screen-btn"
           onClick={onHome}
-          aria-label="Return to lobby"
-          title="Return to lobby"
+          aria-label="Back to home"
+          title="Home"
         >
           ⌂
         </button>
       )}
-      <button
-        type="button"
-        className="screen-btn screen-btn-fullscreen"
-        onClick={toggleFullscreen}
-        aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-        title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-      >
-        {isFullscreen ? '⤡' : '⛶'}
-      </button>
-    </div>
+      {showFullscreen && (
+        <button
+          type="button"
+          className="screen-btn screen-btn-fullscreen"
+          onClick={toggleFullscreen}
+          aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+          title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+        >
+          {isFullscreen ? '⤡' : '⛶'}
+        </button>
+      )}
+    </nav>
   );
 }

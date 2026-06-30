@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import ControllerUI from '../components/ControllerUI';
 import ScreenControls from '../components/ScreenControls';
 import { useRoomState, useSocket } from '../hooks/useSocket';
+import { normalizeRoomCode } from '../../shared/routes';
 import type { RoomState } from '../../shared/types';
 
 function bootedKey(roomId: string) {
@@ -13,9 +14,11 @@ function playerIdKey(roomId: string) {
   return `playerId-${roomId}`;
 }
 
-export default function JoinPage() {
-  const [searchParams] = useSearchParams();
-  const roomId = (searchParams.get('room') ?? '').toUpperCase();
+export default function GuestRoomPage() {
+  const navigate = useNavigate();
+  const { code: codeParam } = useParams();
+  const roomId = normalizeRoomCode(codeParam ?? '');
+
   const { socket, connected } = useSocket();
   const { state, setState } = useRoomState(socket, roomId);
   const [playerId, setPlayerId] = useState<string | null>(() =>
@@ -28,9 +31,9 @@ export default function JoinPage() {
 
   useEffect(() => {
     if (!roomId) {
-      setJoinError('No room code in URL. Scan the QR code on the host screen.');
+      navigate('/', { replace: true });
     }
-  }, [roomId]);
+  }, [roomId, navigate]);
 
   useEffect(() => {
     const s = socket.current;
@@ -61,11 +64,11 @@ export default function JoinPage() {
   }, [state, playerId, roomId, booted]);
 
   const onJoin = useCallback(
-    (name: string, color: string) => {
+    (name: string) => {
       if (!socket.current || !roomId) return;
       socket.current.emit(
         'player:join',
-        { roomId, name, color },
+        { roomId, name },
         (result: {
           ok: boolean;
           playerId?: string;
@@ -109,23 +112,23 @@ export default function JoinPage() {
 
   const onReady = () => socket.current?.emit('player:ready');
   const onJump = () => socket.current?.emit('player:jump');
-  const onRematchReady = () => socket.current?.emit('game:rematch-ready');
+  const onTap = () => socket.current?.emit('player:tap');
+  const onHoldStart = () => socket.current?.emit('player:hold-start');
+  const onHoldEnd = () => socket.current?.emit('player:hold-end');
+  const onLobbyReady = () => socket.current?.emit('game:lobby-ready');
+
+  const leaveRoom = () => {
+    sessionStorage.removeItem(playerIdKey(roomId));
+    navigate('/');
+  };
 
   if (!roomId) {
-    return (
-      <>
-        <ScreenControls />
-        <div className="controller">
-          <h1>Hoe Down Derby</h1>
-          <p className="error">Scan the QR code on the host screen to join a room.</p>
-        </div>
-      </>
-    );
+    return null;
   }
 
   return (
     <>
-      {!booted && <ScreenControls />}
+      {!booted && <ScreenControls onBack={leaveRoom} />}
       <ControllerUI
         state={state}
         playerId={playerId}
@@ -134,9 +137,13 @@ export default function JoinPage() {
         onJoin={onJoin}
         onReady={onReady}
         onJump={onJump}
-        onRematchReady={onRematchReady}
+        onTap={onTap}
+        onHoldStart={onHoldStart}
+        onHoldEnd={onHoldEnd}
+        onLobbyReady={onLobbyReady}
         joinError={joinError}
         roomId={roomId}
+        onLeave={leaveRoom}
       />
     </>
   );
