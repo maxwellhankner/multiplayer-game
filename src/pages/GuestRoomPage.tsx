@@ -128,7 +128,7 @@ export default function GuestRoomPage() {
 
   return (
     <>
-      {!booted && <ScreenControls onBack={leaveRoom} />}
+      {!booted && state?.sessionMode !== 'pc-host' && <ScreenControls onBack={leaveRoom} />}
       <ControllerUI
         state={state}
         playerId={playerId}

@@ -1,4 +1,5 @@
 import { GAMES, getGameById, getGamesForSessionMode, getPlayableGamesForSessionMode } from './games/registry.js';
+import type { GameDefinition } from './games/types.js';
 import type { SessionMode } from './session.js';
 import {
   SESSION_MODES,
@@ -44,6 +45,28 @@ export const DEFAULT_LOBBY_SETTINGS: LobbySettings = {
   specificGameId: 'hoe-down-derby',
   gamePool: ['hoe-down-derby', 'tap-counter', 'button-hold'],
 };
+
+export function getLobbyGameList(
+  sessionMode: SessionMode,
+  settings: LobbySettings,
+): GameDefinition[] {
+  const playable = getPlayableGamesForSessionMode(sessionMode);
+  const playableById = new Map(playable.map((g) => [g.id, g]));
+
+  if (settings.gameSelectionMode === 'specific' && settings.specificGameId) {
+    const game = playableById.get(settings.specificGameId);
+    return game ? [game] : [];
+  }
+
+  const poolIds =
+    settings.gameSelectionMode === 'random'
+      ? playable.map((g) => g.id)
+      : settings.gamePool.filter((id) => playableById.has(id));
+
+  return poolIds
+    .map((id) => playableById.get(id))
+    .filter((g): g is GameDefinition => g !== undefined);
+}
 
 export function resolveGameId(
   settings: LobbySettings,

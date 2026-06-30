@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import type { LobbySettings } from '../../shared/platform';
 import {
   getGameById,
-  getGamesForSessionMode,
   getPlayableGamesForSessionMode,
 } from '../../shared/games/registry';
 import type { SessionMode } from '../../shared/session';
@@ -31,15 +30,10 @@ export default function LobbySettingsPanel({
 }: LobbySettingsPanelProps) {
   const [infoGameId, setInfoGameId] = useState<string | null>(null);
   const infoGame = infoGameId ? getGameById(infoGameId) : null;
-  const availableGames = getGamesForSessionMode(sessionMode);
   const playableGames = getPlayableGamesForSessionMode(sessionMode);
   const playableIds = playableGames.map((g) => g.id);
 
-  const gameLabel = (id: string) => {
-    const g = getGameById(id);
-    if (!g) return id;
-    return g.status === 'placeholder' ? `${g.name} (coming soon)` : g.name;
-  };
+  const gameLabel = (id: string) => getGameById(id)?.name ?? id;
 
   const isRandomMode =
     settings.gameSelectionMode === 'random-from-pool' || settings.gameSelectionMode === 'random';
@@ -51,7 +45,7 @@ export default function LobbySettingsPanel({
       : settings.gamePool.filter((id) => playableIds.includes(id));
 
   const selectedGameId =
-    settings.specificGameId ?? playableGames[0]?.id ?? availableGames[0]?.id ?? '';
+    settings.specificGameId ?? playableGames[0]?.id ?? '';
 
   const selectRandomMode = () => {
     const pool = randomPoolIds.length > 0 ? randomPoolIds : playableIds;
@@ -74,9 +68,6 @@ export default function LobbySettingsPanel({
   };
 
   const onGameToggle = (gameId: string) => {
-    const game = getGameById(gameId);
-    if (game?.status === 'placeholder') return;
-
     if (isSelectedMode) {
       onChange({
         gameSelectionMode: 'specific',
@@ -103,7 +94,7 @@ export default function LobbySettingsPanel({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [infoGameId]);
 
-  if (availableGames.length === 0) {
+  if (playableGames.length === 0) {
     return (
       <>
         <h2>Game Options</h2>
@@ -141,13 +132,12 @@ export default function LobbySettingsPanel({
         <p className="game-mode-options-label">Games</p>
 
         <div className="settings-game-pool">
-          {availableGames.map((game) => (
+          {playableGames.map((game) => (
             <div key={game.id} className="settings-game-row">
               <label className="settings-checkbox">
                 <input
                   type="checkbox"
                   checked={isGameChecked(game.id)}
-                  disabled={game.status === 'placeholder'}
                   onChange={() => onGameToggle(game.id)}
                 />
                 <span>{gameLabel(game.id)}</span>

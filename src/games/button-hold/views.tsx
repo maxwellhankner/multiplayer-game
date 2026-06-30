@@ -1,6 +1,6 @@
 import Scoreboard from '../shared/Scoreboard';
 import ScoreGameWinner from '../shared/ScoreGameWinner';
-import { formatHoldMs } from '../shared/simple-game';
+import { formatHoldMs, getSecondsLeft } from '../shared/simple-game';
 import type { GameControllerProps, GameHostProps } from '../types';
 
 export function ButtonHoldHostView({ state }: GameHostProps) {
@@ -34,10 +34,14 @@ export function ButtonHoldControllerView({
 
   if (state.phase === 'playing') {
     return (
-      <>
+      <div className="controller-game-playing">
         <div className="hud">
-          <span style={{ color: me.color }}>{me.name}</span>
-          <span className="simple-game-hud-score">Best {formatHoldMs(me.score)}</span>
+          <span className="hud-player" style={{ color: me.color }}>
+            {me.name}
+          </span>
+          <span className="simple-game-hud-score">
+            Best {formatHoldMs(me.score)} · {getSecondsLeft(state.gameTime)}s
+          </span>
         </div>
         <div className="controller-game-center">
           <button
@@ -66,7 +70,7 @@ export function ButtonHoldControllerView({
             {me.holding ? 'HOLDING…' : 'HOLD'}
           </button>
         </div>
-      </>
+      </div>
     );
   }
 

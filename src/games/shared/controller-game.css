@@ -1,0 +1,112 @@
+/* Mobile controller — Tap Counter & Button Hold */
+.tap-counter.controller-game,
+.button-hold.controller-game {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.tap-counter .controller-game-playing,
+.button-hold .controller-game-playing {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.tap-counter .hud,
+.button-hold .hud {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  padding-top: max(1rem, env(safe-area-inset-top));
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+}
+
+.tap-counter .hud-player,
+.button-hold .hud-player {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tap-counter .simple-game-hud-score,
+.button-hold .simple-game-hud-score {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.tap-counter .controller-game-center,
+.button-hold .controller-game-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
+  min-height: 100dvh;
+  padding: 1.5rem;
+  padding-top: calc(4.75rem + env(safe-area-inset-top, 0px));
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
+}
+
+.tap-counter .countdown-mobile,
+.button-hold .countdown-mobile {
+  font-size: 5.5rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.tap-counter .controller-game-hint,
+.button-hold .controller-game-hint {
+  color: var(--fg-muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.tap-counter .btn-game-action,
+.button-hold .btn-game-action {
+  width: min(280px, 85vw);
+  height: min(280px, 45vh);
+  border-radius: 50%;
+  border: 2px solid var(--fg);
+  background: transparent;
+  color: var(--fg);
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  flex-shrink: 0;
+}
+
+.tap-counter .btn-game-action:active,
+.button-hold .btn-game-action:active,
+.button-hold .btn-game-action--active {
+  background: var(--fg);
+  color: var(--bg);
+  transform: scale(0.98);
+}

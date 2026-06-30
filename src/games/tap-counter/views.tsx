@@ -1,5 +1,6 @@
 import Scoreboard from '../shared/Scoreboard';
 import ScoreGameWinner from '../shared/ScoreGameWinner';
+import { getSecondsLeft } from '../shared/simple-game';
 import type { GameControllerProps, GameHostProps } from '../types';
 
 export function TapCounterHostView({ state }: GameHostProps) {
@@ -28,10 +29,14 @@ export function TapCounterControllerView({ state, playerId, onTap }: GameControl
 
   if (state.phase === 'playing') {
     return (
-      <>
+      <div className="controller-game-playing">
         <div className="hud">
-          <span style={{ color: me.color }}>{me.name}</span>
-          <span className="simple-game-hud-score">{me.score} taps</span>
+          <span className="hud-player" style={{ color: me.color }}>
+            {me.name}
+          </span>
+          <span className="simple-game-hud-score">
+            {me.score} taps · {getSecondsLeft(state.gameTime)}s
+          </span>
         </div>
         <div className="controller-game-center">
           <button
@@ -46,7 +51,7 @@ export function TapCounterControllerView({ state, playerId, onTap }: GameControl
             TAP
           </button>
         </div>
-      </>
+      </div>
     );
   }
 

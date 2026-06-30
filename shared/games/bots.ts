@@ -10,14 +10,22 @@ export function createBotId(): string {
 }
 
 const BOT_NAMES = [
-  'Bot Alpha',
-  'Bot Bravo',
-  'Bot Charlie',
-  'Bot Delta',
-  'Bot Echo',
-  'Bot Foxtrot',
-  'Bot Golf',
-  'Bot Hotel',
+  'Alpha',
+  'Bravo',
+  'Charlie',
+  'Delta',
+  'Echo',
+  'Foxtrot',
+  'Golf',
+  'Hotel',
+  'India',
+  'Juliet',
+  'Kilo',
+  'Lima',
+  'Mike',
+  'November',
+  'Oscar',
+  'Papa',
 ];
 
 export function pickBotName(takenNames: ReadonlySet<string>): string {
@@ -25,5 +33,5 @@ export function pickBotName(takenNames: ReadonlySet<string>): string {
   if (available.length > 0) {
     return available[Math.floor(Math.random() * available.length)];
   }
-  return `Bot ${Math.floor(Math.random() * 900) + 100}`;
+  return `Romeo ${Math.floor(Math.random() * 900) + 100}`;
 }

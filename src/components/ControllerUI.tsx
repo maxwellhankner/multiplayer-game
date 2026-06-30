@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import type { RoomState } from '../../shared/types';
 import { isBot } from '../../shared/games/bots';
+import { MAX_PLAYERS } from '../../shared/constants';
+import { getLobbyGameList } from '../../shared/platform';
 import { getSessionModeLabel } from '../../shared/session';
 import GameControllerRouter from '../games/GameControllerRouter';
 
@@ -68,17 +70,53 @@ export default function ControllerUI({
   }
 
   if (!playerId) {
+    const isPcHost = state?.sessionMode === 'pc-host';
+
     if (!state) {
       return (
-        <PlatformController className="controller-signup">
-          <h1 className="platform-title">Join lobby</h1>
-          <p className="hint">Room {roomId}</p>
-          <p className="status-msg">{joinError ?? 'Loading room…'}</p>
-          {onLeave && (
-            <button type="button" className="btn btn-secondary" onClick={onLeave}>
-              Change room code
+        <PlatformController className="controller-room-page controller-signup--pc-host">
+          <h2 className="lobby-room-heading controller-lobby-heading">
+            Room Code: <span className="lobby-room-code">{roomId}</span>
+          </h2>
+          <p className="status-msg lobby-status">{joinError ?? 'Loading room…'}</p>
+        </PlatformController>
+      );
+    }
+
+    if (isPcHost) {
+      return (
+        <PlatformController className="controller-room-page controller-signup--pc-host">
+          <h2 className="lobby-room-heading controller-lobby-heading">
+            Room Code: <span className="lobby-room-code">{state.id}</span>
+          </h2>
+          <p className="lobby-session-mode">{getSessionModeLabel(state.sessionMode)}</p>
+
+          <form
+            className="panel controller-lobby-panel"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (name.trim()) onJoin(name.trim());
+            }}
+          >
+            <h2>Your name</h2>
+            <input
+              type="text"
+              placeholder="Enter your name"
+              value={name}
+              maxLength={16}
+              onChange={(e) => setName(e.target.value)}
+              className="text-input"
+              autoComplete="off"
+            />
+            {joinError && <p className="error controller-join-error">{joinError}</p>}
+            <button
+              type="submit"
+              className={`btn btn-large ${name.trim() ? 'btn-primary' : 'btn-secondary'}`}
+              disabled={!name.trim()}
+            >
+              Join
             </button>
-          )}
+          </form>
         </PlatformController>
       );
     }
@@ -133,6 +171,64 @@ export default function ControllerUI({
 
   if (state.phase === 'lobby') {
     const waitingOnOthers = me.ready && state.players.some((p) => !p.ready);
+
+    if (state.sessionMode === 'pc-host') {
+      const lobbyGames = getLobbyGameList(state.sessionMode, state.lobbySettings);
+      const statusText =
+        state.players.length === 0
+          ? 'Waiting for players'
+          : 'Game will begin when all players are ready';
+
+      return (
+        <PlatformController className="controller-room-page controller-lobby--pc-host">
+          <h2 className="lobby-room-heading controller-lobby-heading">
+            Room Code: <span className="lobby-room-code">{state.id}</span>
+          </h2>
+          <p className="lobby-session-mode">{getSessionModeLabel(state.sessionMode)}</p>
+
+          <div className="panel controller-lobby-panel">
+            <h2>Games</h2>
+            {lobbyGames.length > 0 ? (
+              <ul className="controller-game-list">
+                {lobbyGames.map((game) => (
+                  <li key={game.id}>{game.name}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="lobby-status">No games selected yet</p>
+            )}
+          </div>
+
+          <div className="panel controller-lobby-panel controller-lobby-panel--players">
+            <h2>
+              Players ({state.players.length}/{MAX_PLAYERS})
+            </h2>
+            <p className="lobby-status">{statusText}</p>
+            {state.players.length > 0 && (
+              <ul className="player-list">
+                {state.players.map((p) => (
+                  <li key={p.id} className={p.ready ? 'ready' : ''}>
+                    <span className="player-dot" style={{ background: p.color }} />
+                    <span className="player-name">
+                      {p.name}
+                      {isBot(p.id) && <span className="bot-tag"> (bot)</span>}
+                    </span>
+                    <span className="player-status">{p.ready ? 'Ready' : 'Waiting'}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="controller-lobby-footer">
+            {waitingOnOthers && <p className="status-msg">Waiting for others…</p>}
+            <button className="btn btn-primary btn-large" disabled={me.ready} onClick={onReady}>
+              Ready
+            </button>
+          </div>
+        </PlatformController>
+      );
+    }
 
     return (
       <PlatformController className="controller-lobby">

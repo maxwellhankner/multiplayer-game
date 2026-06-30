@@ -1,5 +1,6 @@
 @import './styles/platform.css';
 @import './games/hoe-down-derby/styles.css';
+@import './games/shared/controller-game.css';
 
 *,
 *::before,
@@ -15,4 +16,11 @@ body,
   height: 100%;
   background: #000;
   color: #fff;
+}
+
+body:has(.platform-shell.controller),
+body:has(.home-page),
+body:has(.host-lobby-page) {
+  overflow: hidden;
+  height: 100dvh;
 }
