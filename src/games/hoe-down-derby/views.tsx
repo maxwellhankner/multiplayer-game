@@ -16,18 +16,17 @@ export function HoeDownControllerView({ state, playerId, onJump }: GameControlle
   const me = state.players.find((p) => p.id === playerId);
   if (!me) return null;
 
-  if (state.phase === 'countdown') {
-    return (
-      <MobileControllerCountdown
-        count={state.countdown > 0 ? state.countdown : 'GO!'}
-        hint="Get ready to jump"
-      />
-    );
-  }
-
-  if (state.phase === 'playing') {
+  if (state.phase === 'countdown' || state.phase === 'playing') {
+    const inCountdown = state.phase === 'countdown';
     return (
       <div className="controller-game-play">
+        {inCountdown && (
+          <MobileControllerCountdown
+            count={state.countdown > 0 ? state.countdown : 'GO!'}
+            hint="Get ready to jump"
+            overlay
+          />
+        )}
         <div className="controller-game-hud">
           <span style={{ color: me.color }}>{me.name}</span>
           <span className="controller-game-hud-muted apples-display">

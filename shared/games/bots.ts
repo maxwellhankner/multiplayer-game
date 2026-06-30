@@ -9,6 +9,11 @@ export function showsAsReady(player: { id: string; ready: boolean }): boolean {
   return isBot(player.id) || player.ready;
 }
 
+/** Bots count as landscape-ready automatically in Coin Rush orient phase. */
+export function showsAsLandscapeReady(player: { id: string; landscapeReady: boolean }): boolean {
+  return isBot(player.id) || player.landscapeReady;
+}
+
 /** Game start / lobby return only requires every human player to be ready. */
 export function allHumansReady(players: Iterable<{ id: string; ready: boolean }>): boolean {
   const humans = [...players].filter((p) => !isBot(p.id));

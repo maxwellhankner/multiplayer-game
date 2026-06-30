@@ -45,6 +45,8 @@ export function createBotPlayer(
     id,
     name,
     ready: true,
+    landscapeReady: false,
+    wins: 0,
     lives: 3,
     lane,
     jumpPhase: 0,

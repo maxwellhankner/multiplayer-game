@@ -14,6 +14,7 @@ export interface GameControllerProps {
   onScribblePrompt?: (prompt: string) => void;
   onScribbleDraw?: (strokes: ScribbleStroke[]) => void;
   onScribblePick?: (artistId: string) => void;
+  onLandscapeReady?: () => void;
 }
 
 export interface GameClientModule {

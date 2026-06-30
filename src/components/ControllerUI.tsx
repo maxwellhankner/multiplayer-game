@@ -1,10 +1,9 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { BalloonInput, CoinStickInput, RoomState, ScribbleStroke } from '../../shared/types';
 import { isBot } from '../../shared/games/bots';
 import { getSessionModeLabel } from '../../shared/session';
 import GameControllerRouter from '../games/GameControllerRouter';
-import { isCoinRushInLobby } from '../games/coin-rush/lobby';
-import { useIsLandscape } from '../games/coin-rush/useIsLandscape';
+import MobileControllerHostClosed from './mobile/MobileControllerHostClosed';
 import MobileControllerLobby from './mobile/MobileControllerLobby';
 import MobileControllerWinner from './mobile/MobileControllerWinner';
 import PlatformControllerShell from './mobile/PlatformControllerShell';
@@ -22,10 +21,13 @@ interface ControllerUIProps {
   onScribblePrompt: (prompt: string) => void;
   onScribbleDraw: (strokes: ScribbleStroke[]) => void;
   onScribblePick: (artistId: string) => void;
+  onLandscapeReady: () => void;
   onLobbyReady: () => void;
   joinError: string | null;
   roomId: string;
+  savedName?: string | null;
   onLeave?: () => void;
+  onBackToJoin?: () => void;
 }
 
 function PlatformController({ children, className }: { children: ReactNode; className?: string }) {
@@ -45,13 +47,20 @@ export default function ControllerUI({
   onScribblePrompt,
   onScribbleDraw,
   onScribblePick,
+  onLandscapeReady,
   onLobbyReady,
   joinError,
   roomId,
+  savedName,
   onLeave,
+  onBackToJoin,
 }: ControllerUIProps) {
-  const [name, setName] = useState('');
-  const isLandscape = useIsLandscape();
+  const [name, setName] = useState(savedName ?? '');
+  const hostOffline = state?.sessionMode === 'pc-host' && state.hostOnline === false;
+
+  useEffect(() => {
+    if (savedName) setName(savedName);
+  }, [savedName]);
 
   if (!connected) {
     return (
@@ -95,6 +104,12 @@ export default function ControllerUI({
           </h2>
           <p className="lobby-session-mode">{getSessionModeLabel(state.sessionMode)}</p>
 
+          {hostOffline && (
+            <p className="status-msg controller-host-closed-hint">
+              This lobby is closed. Please wait for it to come back online.
+            </p>
+          )}
+
           <form
             className="panel controller-lobby-panel"
             onSubmit={(e) => {
@@ -115,8 +130,8 @@ export default function ControllerUI({
             {joinError && <p className="error controller-join-error">{joinError}</p>}
             <button
               type="submit"
-              className={`btn btn-large ${name.trim() ? 'btn-primary' : 'btn-secondary'}`}
-              disabled={!name.trim()}
+              className={`btn btn-large ${name.trim() && !hostOffline ? 'btn-primary' : 'btn-secondary'}`}
+              disabled={!name.trim() || hostOffline}
             >
               Join
             </button>
@@ -173,24 +188,25 @@ export default function ControllerUI({
     );
   }
 
+  if (hostOffline && onBackToJoin) {
+    return <MobileControllerHostClosed onBackToJoin={onBackToJoin} />;
+  }
+
   if (state.phase === 'lobby') {
     const waitingOnOthers = me.ready && state.players.some((p) => !isBot(p.id) && !p.ready);
-    const needsLandscape = isCoinRushInLobby(state);
-    const canReady = !me.ready && (!needsLandscape || isLandscape);
+    const canReady = !me.ready;
 
     return (
       <MobileControllerLobby
         state={state}
         canReady={canReady}
         waitingOnOthers={waitingOnOthers}
-        needsLandscape={needsLandscape}
-        isLandscape={isLandscape}
         onReady={onReady}
       />
     );
   }
 
-  if (state.phase === 'countdown' || state.phase === 'playing') {
+  if (state.phase === 'orient' || state.phase === 'countdown' || state.phase === 'playing') {
     return (
       <div className="controller-game-shell">
         <GameControllerRouter
@@ -202,6 +218,7 @@ export default function ControllerUI({
           onScribblePrompt={onScribblePrompt}
           onScribbleDraw={onScribbleDraw}
           onScribblePick={onScribblePick}
+          onLandscapeReady={onLandscapeReady}
         />
       </div>
     );

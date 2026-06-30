@@ -5,7 +5,9 @@ import {
   COIN_RUSH_EYE_FORWARD,
   COIN_RUSH_PLAYER_HEIGHT,
 } from '../../../shared/games/coin-rush/constants';
+import { COIN_RUSH_WIN_COINS } from '../../../shared/games/coin-rush/constants';
 import type { RoomState } from '../../../shared/types';
+import CoinRushPaneGrid from './CoinRushPaneGrid';
 import { getSplitPanes } from './splitLayout';
 
 interface CoinRushHostCanvasProps {
@@ -35,6 +37,7 @@ export default function CoinRushHostCanvas({ state }: CoinRushHostCanvasProps) {
     container.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87b5d8);
     scene.fog = new THREE.Fog(0x87b5d8, 28, 52);
 
     const ambient = new THREE.AmbientLight(0xffffff, 0.55);
@@ -203,30 +206,13 @@ export default function CoinRushHostCanvas({ state }: CoinRushHostCanvasProps) {
     };
   }, []);
 
-  const panes = getSplitPanes(state.players.length);
-
   return (
     <div className="coin-rush-host" ref={containerRef}>
-      {state.players.map((player, i) => {
-        const pane = panes[i];
-        if (!pane) return null;
-        return (
-          <div
-            key={player.id}
-            className="coin-rush-pane-label"
-            style={{
-              left: `${pane.left * 100}%`,
-              top: `${pane.top * 100}%`,
-              width: `${pane.width * 100}%`,
-            }}
-          >
-            <span className="coin-rush-pane-name" style={{ color: player.color }}>
-              {player.name}
-            </span>
-            <span className="coin-rush-pane-score">{player.score}/5</span>
-          </div>
-        );
-      })}
+      <CoinRushPaneGrid
+        players={state.players}
+        mode="play"
+        winCoins={COIN_RUSH_WIN_COINS}
+      />
     </div>
   );
 }

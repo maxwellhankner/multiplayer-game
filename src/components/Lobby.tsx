@@ -8,6 +8,7 @@ import { getLobbyGameDefinition } from '../../shared/games/registry';
 import { getSessionModeLabel } from '../../shared/session';
 import type { RoomState } from '../../shared/types';
 import LobbyClipboardIcon from './mobile/LobbyClipboardIcon';
+import PlayerWinBadge from './PlayerWinBadge';
 import LobbySettingsPanel from './LobbySettingsPanel';
 
 interface LobbyProps {
@@ -120,6 +121,7 @@ export default function Lobby({
                   <span className="player-dot" style={{ background: p.color }} />
                   <span className="player-name">
                     {p.name}
+                    <PlayerWinBadge wins={p.wins ?? 0} />
                     {isBot(p.id) && <span className="bot-tag"> (bot)</span>}
                   </span>
                   <span className="player-status">{showsAsReady(p) ? 'Ready' : 'Waiting'}</span>

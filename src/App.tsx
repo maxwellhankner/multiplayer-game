@@ -1,7 +1,9 @@
 import { BrowserRouter, Navigate, Route, Routes, useSearchParams } from 'react-router-dom';
+import { AudioProvider } from './audio/AudioProvider';
 import HomePage from './pages/HomePage';
 import HostRoomPage from './pages/HostRoomPage';
 import GuestRoomPage from './pages/GuestRoomPage';
+import SoundsPreviewPage from './pages/SoundsPreviewPage';
 import { guestRoomPath, normalizeRoomCode } from '../shared/routes';
 import './index.css';
 
@@ -16,19 +18,22 @@ function LegacyJoinRedirect() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/host/:code" element={<HostRoomPage />} />
-        <Route path="/room/:code" element={<GuestRoomPage />} />
+    <AudioProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/host/:code" element={<HostRoomPage />} />
+          <Route path="/room/:code" element={<GuestRoomPage />} />
+        <Route path="/sounds" element={<SoundsPreviewPage />} />
 
-        {/* Legacy redirects */}
-        <Route path="/host/setup" element={<Navigate to="/" replace />} />
-        <Route path="/host" element={<Navigate to="/" replace />} />
-        <Route path="/join" element={<LegacyJoinRedirect />} />
+          {/* Legacy redirects */}
+          <Route path="/host/setup" element={<Navigate to="/" replace />} />
+          <Route path="/host" element={<Navigate to="/" replace />} />
+          <Route path="/join" element={<LegacyJoinRedirect />} />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AudioProvider>
   );
 }

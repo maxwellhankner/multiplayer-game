@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { BalloonInput } from '../../../shared/types';
+import MobileControllerCountdown from '../../components/mobile/MobileControllerCountdown';
 
 interface BalloonDropControlsProps {
   playerName: string;
@@ -8,6 +9,8 @@ interface BalloonDropControlsProps {
   solo: boolean;
   survivalMs: number;
   onInput: (input: BalloonInput) => void;
+  countdown?: number | string;
+  countdownHint?: string;
 }
 
 export default function BalloonDropControls({
@@ -17,6 +20,8 @@ export default function BalloonDropControls({
   solo,
   survivalMs,
   onInput,
+  countdown,
+  countdownHint,
 }: BalloonDropControlsProps) {
   const moveRef = useRef(0);
 
@@ -49,6 +54,9 @@ export default function BalloonDropControls({
 
   return (
     <div className="controller-game-play">
+      {countdown !== undefined && countdownHint && (
+        <MobileControllerCountdown count={countdown} hint={countdownHint} overlay />
+      )}
       <div className="controller-game-hud">
         <span style={{ color: playerColor }}>{playerName}</span>
         {solo && (

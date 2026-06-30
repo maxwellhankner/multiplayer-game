@@ -6,6 +6,7 @@ import {
 } from '../../shared/games/registry';
 import type { SessionMode } from '../../shared/session';
 import { getSessionModeLabel } from '../../shared/session';
+import SoundToggle from './SoundToggle';
 
 interface LobbySettingsPanelProps {
   sessionMode: SessionMode;
@@ -101,11 +102,14 @@ export default function LobbySettingsPanel({
       <>
         <div className="lobby-panel-header">
           <h1>Game Options</h1>
-          {onReset && (
-            <button type="button" className="lobby-panel-btn" onClick={onReset}>
-              Reset
-            </button>
-          )}
+          <div className="lobby-panel-header-actions">
+            <SoundToggle className="lobby-panel-btn" iconOnly />
+            {onReset && (
+              <button type="button" className="lobby-panel-btn" onClick={onReset}>
+                Reset
+              </button>
+            )}
+          </div>
         </div>
         <p className="settings-empty">
           No games registered for <strong>{getSessionModeLabel(sessionMode)}</strong> yet.
@@ -118,11 +122,14 @@ export default function LobbySettingsPanel({
     <>
       <div className="lobby-panel-header">
         <h1>Game Options</h1>
-        {onReset && (
-          <button type="button" className="lobby-panel-btn" onClick={onReset}>
-            Reset
-          </button>
-        )}
+        <div className="lobby-panel-header-actions">
+          <SoundToggle className="lobby-panel-btn" iconOnly />
+          {onReset && (
+            <button type="button" className="lobby-panel-btn" onClick={onReset}>
+              Reset
+            </button>
+          )}
+        </div>
       </div>
 
       <section className="game-options-section" aria-label="Game selection">

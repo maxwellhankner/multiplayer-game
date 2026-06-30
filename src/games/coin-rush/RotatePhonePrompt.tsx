@@ -15,7 +15,7 @@ export default function RotatePhonePrompt({ compact = false }: RotatePhonePrompt
         </div>
       </div>
       <p className="coin-rush-rotate-text">Rotate your phone sideways</p>
-      <p className="coin-rush-rotate-sub">Hold landscape to ready up and play</p>
+      <p className="coin-rush-rotate-sub">Hold landscape to continue</p>
     </div>
   );
 }

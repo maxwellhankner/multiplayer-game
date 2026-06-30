@@ -10,6 +10,7 @@ interface GameControllerRouterProps {
   onScribblePrompt: (prompt: string) => void;
   onScribbleDraw: (strokes: ScribbleStroke[]) => void;
   onScribblePick: (artistId: string) => void;
+  onLandscapeReady: () => void;
 }
 
 export default function GameControllerRouter({
@@ -21,6 +22,7 @@ export default function GameControllerRouter({
   onScribblePrompt,
   onScribbleDraw,
   onScribblePick,
+  onLandscapeReady,
 }: GameControllerRouterProps) {
   const gameId = state.activeGameId;
   const module = getGameClientModule(gameId);
@@ -32,7 +34,7 @@ export default function GameControllerRouter({
 
   const { ControllerView } = module;
 
-  if (state.phase === 'countdown' || state.phase === 'playing') {
+  if (state.phase === 'orient' || state.phase === 'countdown' || state.phase === 'playing') {
     return (
       <div className={`${themeClass} controller-game`.trim()}>
         <ControllerView
@@ -44,6 +46,7 @@ export default function GameControllerRouter({
           onScribblePrompt={onScribblePrompt}
           onScribbleDraw={onScribbleDraw}
           onScribblePick={onScribblePick}
+          onLandscapeReady={onLandscapeReady}
         />
       </div>
     );

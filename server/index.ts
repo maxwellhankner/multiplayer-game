@@ -20,6 +20,7 @@ import {
   removePlayer,
   serializeRoom,
   setPlayerReady,
+  setPlayerLandscapeReady,
   setPlayerBalloonInput,
   setPlayerCoinInput,
   setTrackWidth,
@@ -32,7 +33,6 @@ import {
 } from './game.js';
 import {
   isDevRoomPersistEnabled,
-  isShuttingDown,
   loadDevRooms,
   registerDevPersistShutdown,
   saveDevRoomsNow,
@@ -101,6 +101,7 @@ io.on('connection', (socket) => {
     ) => {
       const sessionMode = data?.sessionMode ?? 'pc-host';
       const room = createRoom(sessionMode);
+      room.hostOnline = true;
       socketRoom.set(socket.id, room.id);
       hostRooms.set(room.id, socket.id);
       socket.join(room.id);
@@ -120,10 +121,12 @@ io.on('connection', (socket) => {
       room = created;
       if (devPersistEnabled) scheduleDevRoomPersist();
     }
+    room.hostOnline = true;
     socketRoom.set(socket.id, room.id);
     hostRooms.set(room.id, socket.id);
     socket.join(room.id);
     cb(serializeRoom(room));
+    broadcastRoomState(room);
   });
 
   socket.on('host:lobby-settings', (settings: Partial<LobbySettings>) => {
@@ -228,6 +231,16 @@ io.on('connection', (socket) => {
     const room = getRoom(roomId);
     if (!room) return;
     if (setPlayerReady(room, socket.id)) {
+      broadcastRoomState(room);
+    }
+  });
+
+  socket.on('player:landscape-ready', () => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (setPlayerLandscapeReady(room, socket.id)) {
       broadcastRoomState(room);
     }
   });
@@ -376,9 +389,14 @@ io.on('connection', (socket) => {
 
     if (hostRooms.get(roomId) === socket.id) {
       hostRooms.delete(roomId);
+      const room = getRoom(roomId);
+      if (room) {
+        room.hostOnline = false;
+        broadcastRoomState(room);
+      }
     } else {
       const room = getRoom(roomId);
-      if (room && !(devPersistEnabled && !isShuttingDown())) {
+      if (room) {
         removePlayer(room, socket.id);
         broadcastRoomState(room);
       }
@@ -399,7 +417,7 @@ setInterval(() => {
     const prevPhase = room.phase;
     tickRoom(room, TICK_MS);
 
-    if (room.phase !== prevPhase || room.phase === 'playing' || room.phase === 'countdown' || room.phase === 'winner' || room.activeGameId === 'scribble-time') {
+    if (room.phase !== prevPhase || room.phase === 'playing' || room.phase === 'countdown' || room.phase === 'orient' || room.phase === 'winner' || room.activeGameId === 'scribble-time') {
       broadcastRoomState(room);
     }
   }

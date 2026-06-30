@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import type { BalloonInput } from '../../../shared/types';
 import type { GameControllerProps, GameHostProps } from '../types';
-import MobileControllerCountdown from '../../components/mobile/MobileControllerCountdown';
 import BalloonDropControls from './BalloonDropControls';
 import BalloonDropHostCanvas from './BalloonDropHostCanvas';
 import BalloonDropWinner from './BalloonDropWinner';
@@ -41,16 +40,8 @@ export function BalloonDropControllerView({ state, playerId, onBalloonInput }: G
 
   if (!me) return null;
 
-  if (state.phase === 'countdown') {
-    return (
-      <MobileControllerCountdown
-        count={state.countdown > 0 ? state.countdown : 'GO!'}
-        hint="Head the balloon — don't let it touch the floor"
-      />
-    );
-  }
-
-  if (state.phase === 'playing') {
+  if (state.phase === 'countdown' || state.phase === 'playing') {
+    const inCountdown = state.phase === 'countdown';
     return (
       <BalloonDropControls
         playerName={me.name}
@@ -59,6 +50,8 @@ export function BalloonDropControllerView({ state, playerId, onBalloonInput }: G
         solo={state.players.length === 1}
         survivalMs={state.gameTime}
         onInput={sendInput}
+        countdown={inCountdown ? (state.countdown > 0 ? state.countdown : 'GO!') : undefined}
+        countdownHint={inCountdown ? "Head the balloon — don't let it touch the floor" : undefined}
       />
     );
   }

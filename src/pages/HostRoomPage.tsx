@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import GameHostRouter from '../games/GameHostRouter';
 import Lobby from '../components/Lobby';
+import RoomSounds from '../components/RoomSounds';
 import ScreenControls from '../components/ScreenControls';
 import { useNetworkInfo, useRoomState, useSocket } from '../hooks/useSocket';
 import type { LobbySettings } from '../../shared/platform';
@@ -137,7 +138,7 @@ export default function HostRoomPage() {
     return null;
   }
 
-  const showGame = state.phase === 'countdown' || state.phase === 'playing' || state.phase === 'winner';
+  const showGame = state.phase === 'orient' || state.phase === 'countdown' || state.phase === 'playing' || state.phase === 'winner';
 
   if (state.phase === 'lobby' && !networkInfo) {
     return (
@@ -155,6 +156,7 @@ export default function HostRoomPage() {
 
   return (
     <div className={showGame && gameTheme ? gameTheme : 'platform-shell'}>
+      <RoomSounds state={state} />
       <ScreenControls onHome={showGame ? handleHome : undefined} />
       {state.phase === 'lobby' ? (
         <div className="platform-page host-lobby-page">

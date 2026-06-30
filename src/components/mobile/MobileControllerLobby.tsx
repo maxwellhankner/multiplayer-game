@@ -4,16 +4,15 @@ import { MAX_PLAYERS } from '../../../shared/constants';
 import { getLobbyGameList } from '../../../shared/platform';
 import type { RoomState } from '../../../shared/types';
 import { useNetworkInfo } from '../../hooks/useSocket';
-import RotatePhonePrompt from '../../games/coin-rush/RotatePhonePrompt';
 import LobbyClipboardIcon from './LobbyClipboardIcon';
+import PlayerWinBadge from '../PlayerWinBadge';
+import SoundToggle from '../SoundToggle';
 import PlatformControllerShell from './PlatformControllerShell';
 
 interface MobileControllerLobbyProps {
   state: RoomState;
   canReady: boolean;
   waitingOnOthers: boolean;
-  needsLandscape: boolean;
-  isLandscape: boolean;
   onReady: () => void;
 }
 
@@ -21,8 +20,6 @@ export default function MobileControllerLobby({
   state,
   canReady,
   waitingOnOthers,
-  needsLandscape,
-  isLandscape,
   onReady,
 }: MobileControllerLobbyProps) {
   const networkInfo = useNetworkInfo();
@@ -63,6 +60,7 @@ export default function MobileControllerLobby({
             <span className="lobby-url-text">{copied ? 'Copied to clipboard' : guestUrl}</span>
             <LobbyClipboardIcon />
           </button>
+          <SoundToggle className="sound-toggle sound-toggle--mobile" />
         </div>
 
         <div className="panel controller-lobby-panel controller-lobby-panel--players">
@@ -77,6 +75,7 @@ export default function MobileControllerLobby({
                   <span className="player-dot" style={{ background: p.color }} />
                   <span className="player-name">
                     {p.name}
+                    <PlayerWinBadge wins={p.wins ?? 0} />
                     {isBot(p.id) && <span className="bot-tag"> (bot)</span>}
                   </span>
                   <span className="player-status">{showsAsReady(p) ? 'Ready' : 'Waiting'}</span>
@@ -98,10 +97,10 @@ export default function MobileControllerLobby({
             <p className="lobby-status">No games selected yet</p>
           )}
         </div>
+
       </div>
 
       <div className="controller-lobby-footer">
-        {needsLandscape && !isLandscape && <RotatePhonePrompt compact />}
         {waitingOnOthers && <p className="status-msg">Waiting for others…</p>}
         <button type="button" className="btn btn-primary btn-large" disabled={!canReady} onClick={onReady}>
           Ready

@@ -4,7 +4,7 @@ import type { SessionMode } from './session';
 export type { LobbySettings } from './platform';
 export type { SessionMode } from './session';
 
-export type GamePhase = 'lobby' | 'countdown' | 'playing' | 'winner';
+export type GamePhase = 'lobby' | 'orient' | 'countdown' | 'playing' | 'winner';
 
 export type BalloonInput = {
   moveX: number;
@@ -48,6 +48,10 @@ export interface PlayerState {
   color: string;
   /** Game score (coins, survival time ms, etc.) */
   score: number;
+  /** Session wins — persists across games in the same room */
+  wins: number;
+  /** Coin Rush — phone held in landscape before countdown */
+  landscapeReady: boolean;
   /** Coin Rush — world position and facing (radians, 0 = +Z) */
   px: number;
   pz: number;
@@ -99,6 +103,8 @@ export interface RoomState {
   scribblePrompt: string | null;
   scribbleDrawings: ScribbleDrawing[];
   scribbleDrawSecondsLeft: number;
+  /** PC host screen connected — mobile controllers wait when false */
+  hostOnline: boolean;
 }
 
 export interface NetworkInfo {

@@ -1,5 +1,6 @@
 import type { BalloonInput, BalloonState, CoinStickInput, CoinState, GamePhase, LobbySettings, ObstacleState, PlayerState, RoomState, ScribblePhase, ScribbleStroke, SessionMode } from '../shared/types.js';
 import { GAME_CONSTANTS, GAMEPLAY, getHorseHitboxBounds, getJumpHeightAtPhase, MAX_PLAYERS, PLAYER_COLORS } from '../shared/constants.js';
+import { getSessionWinPlayerIds } from '../shared/games/session-wins.js';
 import { isBot, allHumansReady } from '../shared/games/bots.js';
 import { getGameById, getGamesForSessionMode } from '../shared/games/registry.js';
 import { getDefaultLobbySettings, resolveGameId } from '../shared/platform.js';
@@ -60,6 +61,8 @@ interface Room {
   scribbleDrawMsLeft: number;
   scribbleDrawTimer: number;
   scribbleBotDrawAt: Map<string, number>;
+  hostOnline: boolean;
+  winsAwarded: boolean;
 }
 
 const rooms = new Map<string, Room>();
@@ -94,6 +97,8 @@ function buildEmptyRoom(id: string, sessionMode: SessionMode): Room {
     scribbleDrawMsLeft: 0,
     scribbleDrawTimer: 0,
     scribbleBotDrawAt: new Map(),
+    hostOnline: false,
+    winsAwarded: false,
   };
 }
 
@@ -102,6 +107,8 @@ function createPlayer(id: string, name: string, lane: number, color: string): Pl
     id,
     name,
     ready: false,
+    landscapeReady: false,
+    wins: 0,
     lives: MAX_LIVES,
     lane,
     jumpPhase: 0,
@@ -234,6 +241,8 @@ export function importDevRoomSnapshots(snapshots: DevRoomSnapshot[]): void {
             {
               ...playerRest,
               ready: isBot(player.id),
+              landscapeReady: false,
+              wins: player.wins ?? 0,
               lives: MAX_LIVES,
               eliminated: false,
               flipPhase: 0,
@@ -270,6 +279,8 @@ export function importDevRoomSnapshots(snapshots: DevRoomSnapshot[]): void {
       scribbleDrawMsLeft: 0,
       scribbleDrawTimer: 0,
       scribbleBotDrawAt: new Map(),
+      hostOnline: false,
+      winsAwarded: false,
     };
     reindexLanes(room);
     rooms.set(room.id, room);
@@ -288,22 +299,25 @@ export function rejoinPlayer(
     return room.players.get(newSocketId) ?? null;
   }
 
-  const player: PlayerState = {
-    ...existing,
-    id: newSocketId,
-    ready: false,
-    lives: MAX_LIVES,
-    eliminated: false,
-    flipPhase: 0,
-    jumpPhase: 0,
-    isJumping: false,
-    invulnUntil: 0,
-    score: 0,
-    px: 0,
-    pz: 0,
-    yaw: 0,
-    pitch: 0,
-  };
+  const inLobby = room.phase === 'lobby' || room.phase === 'winner';
+  const player: PlayerState = inLobby
+    ? { ...existing, id: newSocketId }
+    : {
+        ...existing,
+        id: newSocketId,
+        ready: false,
+        lives: MAX_LIVES,
+        eliminated: false,
+        flipPhase: 0,
+        jumpPhase: 0,
+        isJumping: false,
+        invulnUntil: 0,
+        score: 0,
+        px: 0,
+        pz: 0,
+        yaw: 0,
+        pitch: 0,
+      };
 
   room.players.delete(oldPlayerId);
   room.coinInputs.delete(oldPlayerId);
@@ -375,7 +389,12 @@ export function addPlayer(
 export function removePlayer(room: Room, socketId: string): void {
   if (isBot(socketId)) return;
   room.players.delete(socketId);
+  room.coinInputs.delete(socketId);
+  room.balloonInputs.delete(socketId);
   reindexLanes(room);
+  if (room.phase === 'orient') {
+    tryBeginCountdown(room);
+  }
 }
 
 export function kickPlayer(room: Room, targetId: string): boolean {
@@ -399,6 +418,19 @@ function allPlayersReady(room: Room): boolean {
   return allHumansReady(room.players.values());
 }
 
+function allPlayersLandscapeReady(room: Room): boolean {
+  if (room.players.size === 0) return false;
+  return [...room.players.values()].every((p) => isBot(p.id) || p.landscapeReady);
+}
+
+function tryBeginCountdown(room: Room): void {
+  if (room.phase !== 'orient' || room.activeGameId !== 'coin-rush') return;
+  if (!allPlayersLandscapeReady(room)) return;
+  room.phase = 'countdown';
+  room.countdown = COUNTDOWN_SECONDS;
+  room.countdownTimer = 0;
+}
+
 function readyBots(room: Room): void {
   setBotsReady(room.players);
 }
@@ -411,7 +443,8 @@ function beginRace(room: Room): void {
   if (!game || game.status !== 'playable') return;
 
   room.activeGameId = gameId;
-  room.phase = 'countdown';
+  const isCoinRush = gameId === 'coin-rush';
+  room.phase = isCoinRush ? 'orient' : 'countdown';
   room.countdown = COUNTDOWN_SECONDS;
   room.countdownTimer = 0;
   room.obstacles = [];
@@ -420,7 +453,6 @@ function beginRace(room: Room): void {
   room.lastSpawnX = 0;
   room.winnerId = null;
 
-  const isCoinRush = gameId === 'coin-rush';
   const isBalloonDrop = gameId === 'balloon-drop';
   const isScribbleTime = gameId === 'scribble-time';
   if (isCoinRush) {
@@ -438,6 +470,7 @@ function beginRace(room: Room): void {
 
   for (const p of room.players.values()) {
     p.ready = false;
+    p.landscapeReady = isBot(p.id);
     if (!isCoinRush && !isBalloonDrop && !isScribbleTime) {
       p.lives = MAX_LIVES;
       p.eliminated = false;
@@ -447,6 +480,10 @@ function beginRace(room: Room): void {
       p.flipPhase = 0;
     }
     p.score = 0;
+  }
+
+  if (isCoinRush) {
+    tryBeginCountdown(room);
   }
 }
 
@@ -460,6 +497,16 @@ export function setPlayerReady(room: Room, socketId: string): boolean {
   if (allPlayersReady(room)) {
     beginRace(room);
   }
+  return true;
+}
+
+export function setPlayerLandscapeReady(room: Room, socketId: string): boolean {
+  if (room.phase !== 'orient' || room.activeGameId !== 'coin-rush') return false;
+  const player = room.players.get(socketId);
+  if (!player || isBot(socketId) || player.landscapeReady) return false;
+
+  player.landscapeReady = true;
+  tryBeginCountdown(room);
   return true;
 }
 
@@ -529,6 +576,18 @@ function checkCollision(
 
 function getAlivePlayers(room: Room): PlayerState[] {
   return [...room.players.values()].filter((p) => !p.eliminated);
+}
+
+function awardSessionWins(room: Room): void {
+  const ids = getSessionWinPlayerIds(
+    room.activeGameId,
+    [...room.players.values()],
+    room.winnerId,
+  );
+  for (const id of ids) {
+    const player = room.players.get(id);
+    if (player) player.wins += 1;
+  }
 }
 
 function checkWinner(room: Room): void {
@@ -610,6 +669,7 @@ function resetRoomToLobby(room: Room): void {
   room.phase = 'lobby';
   room.activeGameId = null;
   room.winnerId = null;
+  room.winsAwarded = false;
   room.obstacles = [];
   room.coins = [];
   room.balloons = [];
@@ -620,12 +680,14 @@ function resetRoomToLobby(room: Room): void {
   room.lastSpawnX = 0;
   room.countdown = COUNTDOWN_SECONDS;
   room.countdownTimer = 0;
+  room.winsAwarded = false;
   clearCoinRushBots();
   clearBalloonDropBots();
   clearScribbleTimeState(room);
 
   for (const p of room.players.values()) {
     p.ready = false;
+    p.landscapeReady = false;
     p.lives = MAX_LIVES;
     p.eliminated = false;
     p.flipPhase = 0;
@@ -757,6 +819,11 @@ export function tickRoom(room: Room, dt: number): void {
   }
 
   if (room.phase === 'winner' && room.winnerId) {
+    if (!room.winsAwarded) {
+      awardSessionWins(room);
+      room.winsAwarded = true;
+    }
+
     const winner = room.players.get(room.winnerId);
     if (winner && winner.flipPhase > 0 && winner.flipPhase < 1) {
       winner.flipPhase = Math.min(1, winner.flipPhase + dt / 1200);
@@ -812,5 +879,6 @@ export function serializeRoom(room: Room): RoomState {
         ? serializeScribbleDrawings(room)
         : [],
     scribbleDrawSecondsLeft: Math.ceil(room.scribbleDrawMsLeft / 1000),
+    hostOnline: room.hostOnline,
   };
 }

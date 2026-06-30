@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ControllerUI from '../components/ControllerUI';
+import RoomSounds from '../components/RoomSounds';
 import ScreenControls from '../components/ScreenControls';
 import { useRoomState, useSocket } from '../hooks/useSocket';
 import { normalizeRoomCode } from '../../shared/routes';
@@ -21,11 +22,27 @@ function playerNameKey(roomId: string) {
 function savePlayerSession(roomId: string, id: string, name: string) {
   sessionStorage.setItem(playerIdKey(roomId), id);
   sessionStorage.setItem(playerNameKey(roomId), name);
+  localStorage.setItem(playerNameKey(roomId), name);
+}
+
+function loadStoredPlayerId(roomId: string): string | null {
+  return sessionStorage.getItem(playerIdKey(roomId));
+}
+
+function loadStoredPlayerName(roomId: string): string | null {
+  return (
+    sessionStorage.getItem(playerNameKey(roomId)) ?? localStorage.getItem(playerNameKey(roomId))
+  );
 }
 
 function clearPlayerSession(roomId: string) {
   sessionStorage.removeItem(playerIdKey(roomId));
   sessionStorage.removeItem(playerNameKey(roomId));
+  localStorage.removeItem(playerNameKey(roomId));
+}
+
+function clearStoredPlayerId(roomId: string) {
+  sessionStorage.removeItem(playerIdKey(roomId));
 }
 
 export default function GuestRoomPage() {
@@ -36,10 +53,10 @@ export default function GuestRoomPage() {
   const { socket, connected } = useSocket();
   const { state, setState } = useRoomState(socket, roomId);
   const [playerId, setPlayerId] = useState<string | null>(() =>
-    roomId ? sessionStorage.getItem(playerIdKey(roomId)) : null,
+    roomId ? loadStoredPlayerId(roomId) : null,
   );
   const [playerName, setPlayerName] = useState<string | null>(() =>
-    roomId ? sessionStorage.getItem(playerNameKey(roomId)) : null,
+    roomId ? loadStoredPlayerName(roomId) : null,
   );
   const [booted, setBooted] = useState(() =>
     roomId ? sessionStorage.getItem(bootedKey(roomId)) === '1' : false,
@@ -115,13 +132,45 @@ export default function GuestRoomPage() {
         return;
       }
 
+      if (result.error === 'Player not found' && playerName) {
+        attemptJoin(playerName);
+        return;
+      }
+
       if (result.error === 'Player not found') {
-        clearPlayerSession(roomId);
+        clearStoredPlayerId(roomId);
         setPlayerId(null);
-        setPlayerName(null);
       }
 
       setJoinError(result.error ?? 'Room not found');
+    };
+
+    const attemptJoin = (name: string) => {
+      s.emit(
+        'player:join',
+        { roomId, name },
+        (result: {
+          ok: boolean;
+          playerId?: string;
+          state?: RoomState;
+          error?: string;
+        }) => {
+          if (cancelled) return;
+          if (result.ok) {
+            setJoinError(null);
+            sessionStorage.removeItem(bootedKey(roomId));
+            setBooted(false);
+            if (result.playerId) {
+              savePlayerSession(roomId, result.playerId, name.trim());
+              setPlayerId(result.playerId);
+              setPlayerName(name.trim());
+            }
+            if (result.state) setState(result.state);
+            return;
+          }
+          setJoinError(result.error ?? 'Failed to join');
+        },
+      );
     };
 
     const attemptSession = () => {
@@ -200,11 +249,18 @@ export default function GuestRoomPage() {
   const onScribblePick = (artistId: string) =>
     socket.current?.emit('player:scribble-pick', artistId);
   const onLobbyReady = () => socket.current?.emit('game:lobby-ready');
+  const onLandscapeReady = () => socket.current?.emit('player:landscape-ready');
 
   const leaveRoom = () => {
     clearPlayerSession(roomId);
     navigate('/');
   };
+
+  const backToJoin = useCallback(() => {
+    clearStoredPlayerId(roomId);
+    setPlayerId(null);
+    setJoinError(null);
+  }, [roomId]);
 
   if (!roomId) {
     return null;
@@ -212,6 +268,7 @@ export default function GuestRoomPage() {
 
   return (
     <>
+      <RoomSounds state={state} playerId={playerId} />
       {!booted && (
         <ScreenControls
           onBack={state?.sessionMode !== 'pc-host' ? leaveRoom : undefined}
@@ -230,10 +287,13 @@ export default function GuestRoomPage() {
         onScribblePrompt={onScribblePrompt}
         onScribbleDraw={onScribbleDraw}
         onScribblePick={onScribblePick}
+        onLandscapeReady={onLandscapeReady}
         onLobbyReady={onLobbyReady}
         joinError={joinError}
         roomId={roomId}
+        savedName={playerName}
         onLeave={leaveRoom}
+        onBackToJoin={backToJoin}
       />
     </>
   );
