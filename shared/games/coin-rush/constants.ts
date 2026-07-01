@@ -5,6 +5,7 @@ export const COIN_RUSH_LOOK_SPEED = 2.4;
 export const COIN_RUSH_PITCH_SPEED = 1.8;
 export const COIN_RUSH_MAX_PITCH = 1.15;
 export const COIN_RUSH_COLLECT_RADIUS = 1.35;
+export const COIN_RUSH_SPAWN_CLEAR_RADIUS = 4;
 export const COIN_RUSH_COIN_COUNT = 18;
 export const COIN_RUSH_PLAYER_HEIGHT = 1.6;
 export const COIN_RUSH_EYE_FORWARD = 0.25;

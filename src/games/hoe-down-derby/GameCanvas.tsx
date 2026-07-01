@@ -170,7 +170,7 @@ function drawApple(ctx: CanvasRenderingContext2D, x: number, y: number, filled: 
   ctx.globalAlpha = 1;
 }
 
-const DISPLAY_FONT = 'Rye, serif';
+import { HOE_DOWN_PLAYER_NAME_FONT } from '../shared/playerNameFont';
 
 function drawPlayerLabel(
   ctx: CanvasRenderingContext2D,
@@ -182,7 +182,7 @@ function drawPlayerLabel(
   scale: number,
 ) {
   const fontSize = Math.round(17 * scale);
-  ctx.font = `${fontSize}px ${DISPLAY_FONT}`;
+  ctx.font = `${fontSize}px ${HOE_DOWN_PLAYER_NAME_FONT}`;
   ctx.textBaseline = 'middle';
 
   const displayName = name.toUpperCase();
@@ -325,22 +325,11 @@ export default function GameCanvas({ state }: GameCanvasProps) {
 
         if (player.eliminated) {
           ctx.fillStyle = 'rgba(0,0,0,0.5)';
-          ctx.font = `${Math.round(32 * scale)}px ${DISPLAY_FONT}`;
+          ctx.font = `${Math.round(32 * scale)}px ${HOE_DOWN_PLAYER_NAME_FONT}`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText('OUT', layout.horseX + 30 * scale, laneCenter);
         }
-      }
-
-      if (state.phase === 'countdown') {
-        ctx.fillStyle = 'rgba(0,0,0,0.45)';
-        ctx.fillRect(0, 0, w, h);
-        ctx.fillStyle = '#fff';
-        ctx.font = `120px ${DISPLAY_FONT}`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        const text = state.countdown > 0 ? String(state.countdown) : 'GO!';
-        ctx.fillText(text, w / 2, h / 2);
       }
 
       if (state.phase === 'winner' && confettiRef.current.length > 0) {

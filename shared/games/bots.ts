@@ -21,10 +21,23 @@ export function allHumansReady(players: Iterable<{ id: string; ready: boolean }>
   return humans.every((p) => p.ready);
 }
 
+/** True when the lobby has at least one bot and no human players. */
+export function isBotsOnlyLobby(players: readonly { id: string }[]): boolean {
+  let bots = 0;
+  let humans = 0;
+  for (const p of players) {
+    if (isBot(p.id)) bots += 1;
+    else humans += 1;
+  }
+  return bots >= 1 && humans === 0;
+}
+
 export function createBotId(): string {
   const suffix = Math.random().toString(36).slice(2, 9);
   return `bot-${suffix}`;
 }
+
+const DEFAULT_BOT_NAMES = ['Big Boy', 'Mr Cool', 'Weirdo'] as const;
 
 const BOT_NAMES = [
   'Alpha',
@@ -34,18 +47,25 @@ const BOT_NAMES = [
   'Echo',
   'Foxtrot',
   'Golf',
-  'Hotel',
-  'India',
+  'Big Boy',
+  'Mr Cool',
   'Juliet',
   'Kilo',
   'Lima',
   'Mike',
   'November',
-  'Oscar',
+  'Weirdo',
   'Papa',
 ];
 
-export function pickBotName(takenNames: ReadonlySet<string>): string {
+export function pickBotName(takenNames: ReadonlySet<string>, botIndex = 0): string {
+  if (botIndex < DEFAULT_BOT_NAMES.length) {
+    const preferred = DEFAULT_BOT_NAMES[botIndex];
+    if (!takenNames.has(preferred.toLowerCase())) {
+      return preferred;
+    }
+  }
+
   const available = BOT_NAMES.filter((n) => !takenNames.has(n.toLowerCase()));
   if (available.length > 0) {
     return available[Math.floor(Math.random() * available.length)];

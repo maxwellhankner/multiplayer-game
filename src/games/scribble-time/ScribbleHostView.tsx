@@ -16,11 +16,9 @@ export default function ScribbleHostView({ state }: ScribbleHostViewProps) {
 
   if (state.phase === 'countdown') {
     return (
-      <div className="scribble-host scribble-host--countdown">
-        <div className="scribble-host-countdown-num">
-          {state.countdown > 0 ? state.countdown : 'GO!'}
-        </div>
-        <p className="scribble-host-hint">Get ready to scribble</p>
+      <div className="scribble-host scribble-host--center">
+        <h2 className="scribble-host-title">Scribble Time</h2>
+        <p className="scribble-host-status">Round starting…</p>
       </div>
     );
   }

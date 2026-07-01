@@ -57,7 +57,7 @@ export default function CoinRushControls({
         </div>
       )}
       <div className="controller-game-hud">
-        <span style={{ color: playerColor }}>{playerName}</span>
+        <span className="game-player-name" style={{ color: playerColor }}>{playerName}</span>
         <span className="controller-game-hud-muted">
           {score}/{winCoins}
         </span>

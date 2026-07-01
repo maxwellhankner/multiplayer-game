@@ -7,6 +7,7 @@ import {
   COIN_RUSH_MAX_PITCH,
   COIN_RUSH_MOVE_SPEED,
   COIN_RUSH_PITCH_SPEED,
+  COIN_RUSH_SPAWN_CLEAR_RADIUS,
   COIN_RUSH_WIN_COINS,
 } from '../../../shared/games/coin-rush/constants.js';
 
@@ -58,10 +59,42 @@ function randomArenaPosition(): { x: number; z: number } {
   };
 }
 
-function spawnCoins(room: CoinRushRoom, count: number): void {
+function getPlayerSpawnPosition(index: number, playerCount: number): { x: number; z: number } {
+  const angle = (index / Math.max(playerCount, 1)) * Math.PI * 2;
+  const radius = 4 + (index % 3);
+  return {
+    x: Math.sin(angle) * radius,
+    z: Math.cos(angle) * radius,
+  };
+}
+
+function isTooCloseToSpawns(
+  x: number,
+  z: number,
+  spawns: readonly { x: number; z: number }[],
+  minDist: number,
+): boolean {
+  for (const spawn of spawns) {
+    if (Math.hypot(x - spawn.x, z - spawn.z) < minDist) return true;
+  }
+  return false;
+}
+
+function randomArenaPositionAvoiding(
+  spawns: readonly { x: number; z: number }[],
+  minDist: number,
+): { x: number; z: number } {
+  for (let attempt = 0; attempt < 48; attempt++) {
+    const pos = randomArenaPosition();
+    if (!isTooCloseToSpawns(pos.x, pos.z, spawns, minDist)) return pos;
+  }
+  return randomArenaPosition();
+}
+
+function spawnCoins(room: CoinRushRoom, count: number, spawns: readonly { x: number; z: number }[]): void {
   room.coins = [];
   for (let i = 0; i < count; i++) {
-    const pos = randomArenaPosition();
+    const pos = randomArenaPositionAvoiding(spawns, COIN_RUSH_SPAWN_CLEAR_RADIUS);
     room.coins.push({
       id: `coin-${room.nextCoinId++}`,
       x: pos.x,
@@ -73,20 +106,22 @@ function spawnCoins(room: CoinRushRoom, count: number): void {
 export function initCoinRush(room: CoinRushRoom): void {
   room.nextCoinId = 1;
   room.coinInputs.clear();
-  spawnCoins(room, COIN_RUSH_COIN_COUNT);
 
   const players = [...room.players.values()];
+  const spawns = players.map((_, index) => getPlayerSpawnPosition(index, players.length));
+
   players.forEach((player, index) => {
-    const angle = (index / Math.max(players.length, 1)) * Math.PI * 2;
-    const radius = 4 + (index % 3);
-    player.px = Math.sin(angle) * radius;
-    player.pz = Math.cos(angle) * radius;
-    player.yaw = angle + Math.PI;
+    const spawn = spawns[index]!;
+    player.px = spawn.x;
+    player.pz = spawn.z;
+    player.yaw = (index / Math.max(players.length, 1)) * Math.PI * 2 + Math.PI;
     player.pitch = 0;
     player.score = 0;
     player.eliminated = false;
     room.coinInputs.set(player.id, { ...ZERO_INPUT });
   });
+
+  spawnCoins(room, COIN_RUSH_COIN_COUNT, spawns);
 }
 
 function collectCoins(player: PlayerState, room: CoinRushRoom): boolean {
@@ -187,7 +222,10 @@ export function angleToTarget(
   tx: number,
   tz: number,
 ): number {
-  return Math.atan2(tx - px, tz - pz);
+  const dx = tx - px;
+  const dz = tz - pz;
+  // Match applyStickInput forward: (-sin(yaw), cos(yaw))
+  return Math.atan2(-dx, dz);
 }
 
 export function normalizeAngle(angle: number): number {

@@ -3,6 +3,7 @@ import MobileControllerCountdown from '../../components/mobile/MobileControllerC
 import { SCRIBBLE_PROMPT_MAX_LENGTH } from '../../../shared/games/scribble-time/constants';
 import type { ScribbleStroke, RoomState } from '../../../shared/types';
 import type { GameControllerProps, GameHostProps } from '../types';
+import GameCountdown from '../shared/GameCountdown';
 import ScribbleDrawPad, { ScribblePreview } from './ScribbleDrawPad';
 import ScribbleHostView from './ScribbleHostView';
 import ScribbleWinner from './ScribbleWinner';
@@ -13,16 +14,19 @@ function playerName(state: RoomState, id: string | null): string {
 }
 
 export function ScribbleTimeHostView({ state }: GameHostProps) {
-  if (state.phase === 'winner') {
+  if (state.phase === 'countdown' || state.phase === 'playing' || state.phase === 'winner') {
     return (
       <>
         <ScribbleHostView state={state} />
-        <ScribbleWinner state={state} />
+        {state.phase === 'countdown' && (
+          <GameCountdown
+            count={state.countdown > 0 ? state.countdown : 'GO!'}
+            hint="Get ready to scribble"
+          />
+        )}
+        {state.phase === 'winner' && <ScribbleWinner state={state} />}
       </>
     );
-  }
-  if (state.phase === 'countdown' || state.phase === 'playing') {
-    return <ScribbleHostView state={state} />;
   }
   return null;
 }

@@ -763,6 +763,15 @@
   flex-shrink: 0;
 }
 
+.game-player-name {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 600;
+}
+
+.pane-player-color {
+  color: var(--pane-color);
+}
+
 .player-name {
   flex: 1;
   display: flex;
@@ -1321,7 +1330,6 @@
   padding-top: max(3.25rem, calc(env(safe-area-inset-top) + 2.75rem));
   padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
   pointer-events: none;
-  background: rgba(0, 0, 0, 0.5);
 }
 
 .controller-orient-waiting-overlay {
@@ -1334,7 +1342,6 @@
   padding: 1.25rem;
   padding-top: max(3.25rem, calc(env(safe-area-inset-top) + 2.75rem));
   pointer-events: none;
-  background: rgba(0, 0, 0, 0.35);
 }
 
 .controller-orient-waiting-overlay p {

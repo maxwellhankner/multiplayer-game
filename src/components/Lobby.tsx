@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { LobbySettings } from '../../shared/platform';
 import { getResetLobbySettings } from '../../shared/platform';
-import { isBot, showsAsReady } from '../../shared/games/bots';
+import { isBot, isBotsOnlyLobby, showsAsReady } from '../../shared/games/bots';
 import { MAX_PLAYERS } from '../../shared/constants';
 import { getLobbyGameDefinition } from '../../shared/games/registry';
 import { getSessionModeLabel } from '../../shared/session';
@@ -19,6 +19,7 @@ interface LobbyProps {
   onUpdateSettings?: (patch: Partial<LobbySettings>) => void;
   onAddBot?: () => void;
   onRemoveBot?: (botId: string) => void;
+  onStartBotsOnly?: () => void;
 }
 
 export default function Lobby({
@@ -29,6 +30,7 @@ export default function Lobby({
   onUpdateSettings,
   onAddBot,
   onRemoveBot,
+  onStartBotsOnly,
 }: LobbyProps) {
   const [copied, setCopied] = useState(false);
   const [waitingDots, setWaitingDots] = useState(1);
@@ -50,6 +52,10 @@ export default function Lobby({
 
   const gameDef = getLobbyGameDefinition(state.sessionMode, state.lobbySettings.specificGameId);
   const canAddBot = onAddBot && bots.length < (gameDef?.maxBots ?? 0);
+  const canStartBotsOnly =
+    onStartBotsOnly &&
+    isBotsOnlyLobby(state.players) &&
+    state.players.length >= (gameDef?.minPlayers ?? 1);
 
   const guestUrl = `${roomUrlBase.replace(/\/$/, '')}/${state.id}`;
 
@@ -102,15 +108,24 @@ export default function Lobby({
         <div className="panel lobby-panel lobby-panel--players">
           <div className="lobby-panel-header">
             <h1>Players ({state.players.length}/{MAX_PLAYERS})</h1>
-            {onAddBot && (
-              <button
-                type="button"
-                className="lobby-panel-btn"
-                disabled={!canAddBot}
-                onClick={onAddBot}
-              >
-                Add bot
-              </button>
+            {(canStartBotsOnly || onAddBot) && (
+              <div className="lobby-panel-header-actions">
+                {canStartBotsOnly && (
+                  <button type="button" className="lobby-panel-btn" onClick={onStartBotsOnly}>
+                    Start
+                  </button>
+                )}
+                {onAddBot && (
+                  <button
+                    type="button"
+                    className="lobby-panel-btn"
+                    disabled={!canAddBot}
+                    onClick={onAddBot}
+                  >
+                    Add bot
+                  </button>
+                )}
+              </div>
             )}
           </div>
           <p className="lobby-status">{statusText}</p>

@@ -3,6 +3,7 @@ import {
   getBalloonArenaId,
   getBalloonTeam,
   getPlayerXBounds,
+  getPlayerSpawnX,
   isBalloonTeamMode,
   rebalanceBalloonDropTeamLanes,
 } from '../../../shared/games/balloon-drop/teams.js';
@@ -14,7 +15,6 @@ import {
   BALLOON_DROP_DRIFT,
   BALLOON_DROP_FLOOR_Y,
   BALLOON_DROP_GRAVITY,
-  BALLOON_DROP_HEAD_RADIUS,
   BALLOON_DROP_INPUT_DEADZONE,
   BALLOON_DROP_MAX_VX,
   BALLOON_DROP_MAX_VY,
@@ -90,8 +90,7 @@ export function initBalloonDrop(room: BalloonDropRoom): void {
   for (const arenaId of arenaIds) {
     const arenaPlayers = playersInArena(room, arenaId, playerCount);
     arenaPlayers.forEach((player) => {
-      const { min, max } = getPlayerXBounds(player.lane, playerCount);
-      player.px = (min + max) / 2;
+      player.px = getPlayerSpawnX(player.lane, playerCount);
     });
     room.balloons.push(spawnBalloon(arenaId));
   }
@@ -106,18 +105,18 @@ export function setBalloonInput(room: BalloonDropRoom, playerId: string, input: 
   return true;
 }
 
-function bounceHead(balloon: BalloonState, player: PlayerState): void {
-  const headY = BALLOON_DROP_PLAYER_Y + BALLOON_DROP_PLAYER_RADIUS * 0.6;
+function bouncePlayer(balloon: BalloonState, player: PlayerState): void {
+  const centerY = BALLOON_DROP_PLAYER_Y;
   const dx = balloon.x - player.px;
-  const dy = balloon.y - headY;
+  const dy = balloon.y - centerY;
   const dist = Math.hypot(dx, dy);
-  const minDist = BALLOON_DROP_BALLOON_RADIUS + BALLOON_DROP_HEAD_RADIUS;
+  const minDist = BALLOON_DROP_BALLOON_RADIUS + BALLOON_DROP_PLAYER_RADIUS;
   if (dist >= minDist || dist < 0.001) return;
 
   const nx = dx / dist;
   const ny = dy / dist;
   balloon.x = player.px + nx * minDist;
-  balloon.y = headY + ny * minDist;
+  balloon.y = centerY + ny * minDist;
 
   const bounce = BALLOON_DROP_BOUNCE_UP + Math.random() * 10;
   balloon.vy = Math.abs(bounce);
@@ -167,7 +166,7 @@ function stepBalloon(
   }
 
   for (const player of players) {
-    if (!player.eliminated) bounceHead(balloon, player);
+    if (!player.eliminated) bouncePlayer(balloon, player);
   }
 
   if (balloon.y - r <= BALLOON_DROP_FLOOR_Y) {

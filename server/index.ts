@@ -9,6 +9,7 @@ import {
   addBot,
   addPlayer,
   canRoomAddBot,
+  startBotsOnlyRace,
   createRoom,
   createRoomWithId,
   getRoom,
@@ -385,6 +386,16 @@ io.on('connection', (socket) => {
     if (!room) return;
     if (!canRoomAddBot(room)) return;
     if (!addBot(room)) return;
+    broadcastRoomState(room);
+  });
+
+  socket.on('host:bot-start', () => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    if (hostRooms.get(roomId) !== socket.id) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (!startBotsOnlyRace(room)) return;
     broadcastRoomState(room);
   });
 

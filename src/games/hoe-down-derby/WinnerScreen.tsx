@@ -1,39 +1,22 @@
 import type { RoomState } from '../../../shared/types';
+import GamePhaseWinner from '../shared/GamePhaseWinner';
 
 interface WinnerScreenProps {
   state: RoomState;
 }
 
 export default function WinnerScreen({ state }: WinnerScreenProps) {
-  const winner = state.players.find((p) => p.id === state.winnerId);
+  const winner = state.winnerId ? state.players.find((p) => p.id === state.winnerId) : null;
+  const winnerNames = winner ? [winner.name] : [];
+  const stat = winner ? `${winner.lives} apple${winner.lives === 1 ? '' : 's'} remaining` : 'Everyone ran out of apples';
 
   return (
-    <div className="winner-overlay">
-      <div className="winner-card">
-        {winner ? (
-          <>
-            <div className="trophy">🏆</div>
-            <h2>{winner.name} wins!</h2>
-            <p>Backflip complete. Confetti deployed.</p>
-          </>
-        ) : (
-          <>
-            <h2>Race Over</h2>
-            <p>Everyone ran out of apples!</p>
-          </>
-        )}
-        <p className="rematch-hint">Everyone tap Back to lobby on their phones.</p>
-        <ul className="final-standings">
-          {state.players.map((p) => (
-            <li key={p.id}>
-              <span className="player-dot" style={{ background: p.color }} />
-              {p.name}
-              {p.id === state.winnerId && ' — Winner'}
-              {p.eliminated && p.id !== state.winnerId && ' — Out'}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
+    <GamePhaseWinner
+      icon="🏆"
+      winnerNames={winnerNames}
+      stat={stat}
+      players={state.players}
+      winnerIds={winner ? new Set([winner.id]) : undefined}
+    />
   );
 }

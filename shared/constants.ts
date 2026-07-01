@@ -75,7 +75,7 @@ export const TEST_BOT_COUNT = 3;
 export const PLAYER_COLORS = [
   '#a83340', // red
   '#b86218', // orange
-  '#b89420', // gold
+  '#8b4a32', // copper
   '#3d8550', // green
   '#2a7f96', // teal
   '#2d5fa8', // blue

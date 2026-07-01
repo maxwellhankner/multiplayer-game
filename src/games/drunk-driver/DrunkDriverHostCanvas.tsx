@@ -253,8 +253,8 @@ export default function DrunkDriverHostCanvas({ state }: DrunkDriverHostCanvasPr
 
   return (
     <div className="drunk-driver-host" ref={containerRef}>
-      <DrunkDriverPaneGrid players={state.players} mode="play" />
       <div className="drunk-driver-blur-overlay" aria-hidden />
+      <DrunkDriverPaneGrid players={state.players} mode="play" />
     </div>
   );
 }

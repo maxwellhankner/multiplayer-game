@@ -31,6 +31,8 @@ import { clearDrunkDriverBots } from './games/drunk-driver/module.js';
 import {
   addBotToRoom,
   canAddBot,
+  countBots,
+  countHumans,
   removeBotFromRoom,
   setBotsReady,
 } from './room/bots.js';
@@ -204,6 +206,26 @@ export function removeBot(room: Room, botId: string): boolean {
 
 export function canRoomAddBot(room: Room): boolean {
   return canAddBot(botContext(room));
+}
+
+export function canStartBotsOnlyRace(room: Room): boolean {
+  if (room.phase !== 'lobby') return false;
+  if (countHumans(room.players) !== 0) return false;
+  if (countBots(room.players) === 0) return false;
+  if (getGamesForSessionMode(room.sessionMode).length === 0) return false;
+
+  const gameId = resolveGameId(room.lobbySettings, room.sessionMode);
+  const game = getGameById(gameId);
+  if (!game || game.status !== 'playable') return false;
+  if (room.players.size < game.minPlayers) return false;
+  return true;
+}
+
+export function startBotsOnlyRace(room: Room): boolean {
+  if (!canStartBotsOnlyRace(room)) return false;
+  readyBots(room);
+  beginRace(room);
+  return true;
 }
 
 export function getRoom(id: string): Room | undefined {

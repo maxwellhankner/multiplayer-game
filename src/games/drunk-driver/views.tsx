@@ -13,23 +13,22 @@ import DrunkDriverStartLight from './DrunkDriverStartLight';
 import DrunkDriverWinner from './DrunkDriverWinner';
 
 export function DrunkDriverHostView({ state }: GameHostProps) {
-  if (state.phase === 'orient') {
-    return <DrunkDriverOrient state={state} />;
-  }
+  const showGame =
+    state.phase === 'orient' ||
+    state.phase === 'countdown' ||
+    state.phase === 'playing' ||
+    state.phase === 'winner';
 
-  if (state.phase === 'countdown') {
-    return <DrunkDriverStartLight state={state} />;
-  }
+  if (!showGame) return null;
 
-  if (state.phase === 'playing') {
-    return <DrunkDriverHostCanvas state={state} />;
-  }
-
-  if (state.phase === 'winner') {
-    return <DrunkDriverWinner state={state} />;
-  }
-
-  return null;
+  return (
+    <>
+      <DrunkDriverHostCanvas state={state} />
+      {state.phase === 'orient' && <DrunkDriverOrient />}
+      {state.phase === 'countdown' && <DrunkDriverStartLight state={state} />}
+      {state.phase === 'winner' && <DrunkDriverWinner state={state} />}
+    </>
+  );
 }
 
 export function DrunkDriverControllerView({

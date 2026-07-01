@@ -229,7 +229,7 @@ export function ScribblePreview({
       <div className="scribble-preview-canvas-wrap" ref={containerRef}>
         <canvas ref={canvasRef} className="scribble-preview-canvas" />
       </div>
-      {label && <span className="scribble-preview-label">{label}</span>}
+      {label && <span className="scribble-preview-label game-player-name">{label}</span>}
     </Tag>
   );
 }

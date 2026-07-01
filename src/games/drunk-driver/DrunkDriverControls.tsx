@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { DrunkDriverInput } from '../../../shared/types';
+import GamePhaseStart from '../shared/GamePhaseStart';
 import { DrunkDriverSpotlight } from './DrunkDriverPaneGrid';
 import SteerPad from './SteerPad';
 
@@ -47,9 +48,9 @@ export default function DrunkDriverControls({
   return (
     <div className="controller-game-play drunk-driver-landscape-play">
       {startLight && (
-        <div className="drunk-driver-mobile-startlight">
+        <GamePhaseStart variant="controller" hint="First across the line wins">
           <DrunkDriverSpotlight countdown={countdown > 0 ? countdown : 1} />
-        </div>
+        </GamePhaseStart>
       )}
       {waitingHint && (
         <div className="controller-orient-waiting-overlay" aria-live="polite">
@@ -57,7 +58,7 @@ export default function DrunkDriverControls({
         </div>
       )}
       <div className="controller-game-hud">
-        <span style={{ color: playerColor }}>{playerName}</span>
+        <span className="game-player-name" style={{ color: playerColor }}>{playerName}</span>
         <span className="controller-game-hud-muted">{progressPct}%</span>
       </div>
       <button

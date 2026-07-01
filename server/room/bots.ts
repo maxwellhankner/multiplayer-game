@@ -77,7 +77,7 @@ export function addBotToRoom(room: BotRoomContext): PlayerState | null {
     [...room.players.values()].map((p) => p.name.toLowerCase()),
   );
   const id = createBotId();
-  const name = pickBotName(takenNames);
+  const name = pickBotName(takenNames, bots);
   const color = pickRandomColor(room.players);
   const lane = room.players.size;
 

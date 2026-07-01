@@ -13,6 +13,7 @@ import {
   isBalloonTeamMode,
 } from '../../../shared/games/balloon-drop/teams';
 import type { PlayerState, RoomState } from '../../../shared/types';
+import { gamePlayerNameCanvasFont } from '../shared/playerNameFont';
 import { getColumnSplitPanes } from './columnLayout';
 
 interface BalloonDropHostCanvasProps {
@@ -35,8 +36,8 @@ function drawPlayer(
   ctx.arc(px, py, r, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = '#fff';
-  ctx.font = `600 ${Math.max(8, scaleX * 5)}px system-ui,sans-serif`;
+  ctx.fillStyle = player.color;
+  ctx.font = gamePlayerNameCanvasFont(Math.max(8, scaleX * 5), 600);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'bottom';
   ctx.fillText(player.name, px, py - r - 4);

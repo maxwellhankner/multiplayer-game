@@ -1,3 +1,6 @@
+import GamePhaseCard from '../../games/shared/GamePhaseCard';
+import GamePhaseOverlay from '../../games/shared/GamePhaseOverlay';
+
 interface MobileControllerCountdownProps {
   count: number | string;
   hint: string;
@@ -11,18 +14,18 @@ export default function MobileControllerCountdown({
   overlay = false,
 }: MobileControllerCountdownProps) {
   const content = (
-    <>
-      <div className="countdown-mobile">{count}</div>
-      <p className="controller-game-hint">{hint}</p>
-    </>
+    <GamePhaseCard compact className="game-phase-card--start">
+      <div className="game-phase-start-body">
+        <div className="game-phase-countdown" aria-live="polite">
+          {count}
+        </div>
+        <p className="game-phase-hint">{hint}</p>
+      </div>
+    </GamePhaseCard>
   );
 
   if (overlay) {
-    return (
-      <div className="controller-countdown-overlay" aria-live="polite">
-        {content}
-      </div>
-    );
+    return <GamePhaseOverlay variant="controller">{content}</GamePhaseOverlay>;
   }
 
   return <div className="controller-game-center">{content}</div>;

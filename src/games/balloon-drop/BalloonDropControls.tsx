@@ -58,7 +58,7 @@ export default function BalloonDropControls({
         <MobileControllerCountdown count={countdown} hint={countdownHint} overlay />
       )}
       <div className="controller-game-hud">
-        <span style={{ color: playerColor }}>{playerName}</span>
+        <span className="game-player-name" style={{ color: playerColor }}>{playerName}</span>
         {solo && (
           <span className="controller-game-hud-muted">{Math.floor(survivalMs / 1000)}s</span>
         )}

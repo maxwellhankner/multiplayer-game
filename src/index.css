@@ -1,4 +1,5 @@
 @import './styles/platform.css';
+@import './games/shared/game-phase.css';
 @import './games/scribble-time/styles.css';
 @import './games/hoe-down-derby/styles.css';
 @import './games/balloon-drop/styles.css';
@@ -11,6 +12,37 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+input,
+textarea,
+[contenteditable='true'],
+.text-input {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+::selection {
+  background: transparent;
+}
+
+input::selection,
+textarea::selection,
+[contenteditable='true']::selection,
+.text-input::selection {
+  background: highlight;
+  color: highlighttext;
+}
+
+img,
+svg {
+  -webkit-user-drag: none;
+  user-drag: none;
 }
 
 html,

@@ -40,22 +40,21 @@ export default function DrunkDriverPaneGrid({
               top: `${pane.top * 100}%`,
               width: `${pane.width * 100}%`,
               height: `${pane.height * 100}%`,
-              borderColor: player.color,
               ['--pane-color' as string]: player.color,
             }}
           >
             {mode === 'play' && (
-              <div className="drunk-driver-pane-label">
-                <span className="drunk-driver-pane-name" style={{ color: player.color }}>
+              <div className="drunk-driver-pane-play-body">
+                <span className="drunk-driver-pane-name game-player-name pane-player-color">
                   {player.name}
                 </span>
-                <span className="drunk-driver-pane-score">{formatDistance(player.pz)}</span>
+                <span className="drunk-driver-pane-score pane-player-color">{formatDistance(player.pz)}</span>
               </div>
             )}
 
             {mode === 'orient' && (
               <div className="drunk-driver-pane-orient">
-                <p className="drunk-driver-pane-center-name" style={{ color: player.color }}>
+                <p className="drunk-driver-pane-center-name game-player-name pane-player-color">
                   {player.name}
                 </p>
                 <p
@@ -71,7 +70,7 @@ export default function DrunkDriverPaneGrid({
             )}
 
             {mode === 'startlight' && (
-              <p className="drunk-driver-pane-center-name" style={{ color: player.color }}>
+              <p className="drunk-driver-pane-center-name game-player-name pane-player-color">
                 {player.name}
               </p>
             )}
@@ -79,10 +78,10 @@ export default function DrunkDriverPaneGrid({
             {mode === 'winner' && (
               <div className="drunk-driver-pane-winner-body">
                 {isWinner && <span className="drunk-driver-pane-winner-badge">Winner</span>}
-                <p className="drunk-driver-pane-center-name" style={{ color: player.color }}>
+                <p className="drunk-driver-pane-center-name game-player-name pane-player-color">
                   {player.name}
                 </p>
-                <p className="drunk-driver-pane-winner-score">{formatDistance(player.pz)} to line</p>
+                <p className="drunk-driver-pane-winner-score pane-player-color">{formatDistance(player.pz)} to line</p>
               </div>
             )}
           </div>

@@ -1,32 +1,29 @@
 import { useCallback } from 'react';
 import type { BalloonInput } from '../../../shared/types';
 import type { GameControllerProps, GameHostProps } from '../types';
+import GameCountdown from '../shared/GameCountdown';
 import BalloonDropControls from './BalloonDropControls';
 import BalloonDropHostCanvas from './BalloonDropHostCanvas';
 import BalloonDropWinner from './BalloonDropWinner';
 
 export function BalloonDropHostView({ state }: GameHostProps) {
-  if (state.phase === 'countdown') {
-    return (
-      <div className="balloon-drop-countdown">
-        <div className="balloon-drop-countdown-num">
-          {state.countdown > 0 ? state.countdown : 'GO!'}
-        </div>
-        <p className="balloon-drop-countdown-hint">Keep the balloon off the floor</p>
-      </div>
-    );
-  }
+  const showGame =
+    state.phase === 'countdown' || state.phase === 'playing' || state.phase === 'winner';
 
-  if (state.phase === 'playing' || state.phase === 'winner') {
-    return (
-      <>
-        <BalloonDropHostCanvas state={state} />
-        {state.phase === 'winner' && <BalloonDropWinner state={state} />}
-      </>
-    );
-  }
+  if (!showGame) return null;
 
-  return null;
+  return (
+    <>
+      <BalloonDropHostCanvas state={state} />
+      {state.phase === 'countdown' && (
+        <GameCountdown
+          count={state.countdown > 0 ? state.countdown : 'GO!'}
+          hint="Keep the balloon off the floor"
+        />
+      )}
+      {state.phase === 'winner' && <BalloonDropWinner state={state} />}
+    </>
+  );
 }
 
 export function BalloonDropControllerView({ state, playerId, onBalloonInput }: GameControllerProps) {

@@ -121,3 +121,17 @@ export function getPlayerXBounds(
     max: sliceWidth * (index + 1) - margin,
   };
 }
+
+const TEAM_SPAWN_CENTER_BLEND = 0.75;
+
+/** Starting X — in team mode, pull each player toward arena center (under the balloon). */
+export function getPlayerSpawnX(lane: number, playerCount: number): number {
+  const { min, max } = getPlayerXBounds(lane, playerCount);
+  const sliceCenter = (min + max) / 2;
+  if (!isBalloonTeamMode(playerCount)) {
+    return sliceCenter;
+  }
+  const arenaCenter = BALLOON_DROP_ARENA_WIDTH / 2;
+  const px = sliceCenter + (arenaCenter - sliceCenter) * TEAM_SPAWN_CENTER_BLEND;
+  return Math.max(min, Math.min(max, px));
+}

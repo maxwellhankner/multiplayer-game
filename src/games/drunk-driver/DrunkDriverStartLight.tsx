@@ -1,5 +1,6 @@
 import type { RoomState } from '../../../shared/types';
-import DrunkDriverPaneGrid, { DrunkDriverSpotlight } from './DrunkDriverPaneGrid';
+import GamePhaseStart from '../shared/GamePhaseStart';
+import { DrunkDriverSpotlight } from './DrunkDriverPaneGrid';
 
 interface DrunkDriverStartLightProps {
   state: RoomState;
@@ -7,9 +8,8 @@ interface DrunkDriverStartLightProps {
 
 export default function DrunkDriverStartLight({ state }: DrunkDriverStartLightProps) {
   return (
-    <div className="drunk-driver-startlight">
-      <DrunkDriverPaneGrid players={state.players} mode="startlight" />
+    <GamePhaseStart hint="First across the line wins">
       <DrunkDriverSpotlight countdown={state.countdown > 0 ? state.countdown : 1} />
-    </div>
+    </GamePhaseStart>
   );
 }

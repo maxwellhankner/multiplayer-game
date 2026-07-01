@@ -3,7 +3,6 @@ export const BALLOON_DROP_FLOOR_Y = 8;
 export const BALLOON_DROP_CEILING_Y = 92;
 export const BALLOON_DROP_PLAYER_Y = 14;
 export const BALLOON_DROP_PLAYER_RADIUS = 5;
-export const BALLOON_DROP_HEAD_RADIUS = 4.5;
 export const BALLOON_DROP_BALLOON_RADIUS = 2.75;
 export const BALLOON_DROP_MOVE_SPEED = 22;
 export const BALLOON_DROP_GRAVITY = 38;

@@ -89,6 +89,10 @@ export default function HostRoomPage() {
     socket.current?.emit('host:bot-add');
   };
 
+  const handleStartBotsOnly = () => {
+    socket.current?.emit('host:bot-start');
+  };
+
   const handleRemoveBot = (botId: string) => {
     socket.current?.emit('host:bot-remove', botId);
   };
@@ -168,10 +172,13 @@ export default function HostRoomPage() {
             onUpdateSettings={handleSettingsChange}
             onAddBot={handleAddBot}
             onRemoveBot={handleRemoveBot}
+            onStartBotsOnly={handleStartBotsOnly}
           />
         </div>
       ) : (
-        <div className="host-page">{showGame && <GameHostRouter state={state} />}</div>
+        <div className="host-page">
+          {showGame && <GameHostRouter state={state} />}
+        </div>
       )}
     </div>
   );

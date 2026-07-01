@@ -1,5 +1,6 @@
 import GameCanvas from './GameCanvas';
 import WinnerScreen from './WinnerScreen';
+import GameCountdown from '../shared/GameCountdown';
 import MobileControllerCountdown from '../../components/mobile/MobileControllerCountdown';
 import type { GameControllerProps, GameHostProps } from '../types';
 
@@ -7,6 +8,12 @@ export function HoeDownHostView({ state }: GameHostProps) {
   return (
     <>
       <GameCanvas state={state} />
+      {state.phase === 'countdown' && (
+        <GameCountdown
+          count={state.countdown > 0 ? state.countdown : 'GO!'}
+          hint="Get ready to jump"
+        />
+      )}
       {state.phase === 'winner' && <WinnerScreen state={state} />}
     </>
   );
@@ -28,7 +35,7 @@ export function HoeDownControllerView({ state, playerId, onJump }: GameControlle
           />
         )}
         <div className="controller-game-hud">
-          <span style={{ color: me.color }}>{me.name}</span>
+          <span className="game-player-name" style={{ color: me.color }}>{me.name}</span>
           <span className="controller-game-hud-muted apples-display">
             {[0, 1, 2].map((i) => (
               <span key={i} className={i < me.lives ? 'filled' : 'empty'}>

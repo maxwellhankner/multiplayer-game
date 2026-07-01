@@ -3,8 +3,8 @@ import { showsAsLandscapeReady } from '../../../shared/games/bots';
 import { COIN_RUSH_WIN_COINS } from '../../../shared/games/coin-rush/constants';
 import type { CoinStickInput } from '../../../shared/types';
 import type { GameControllerProps, GameHostProps } from '../types';
+import GameCountdown from '../shared/GameCountdown';
 import CoinRushControls from './CoinRushControls';
-import CoinRushCountdown from './CoinRushCountdown';
 import CoinRushHostCanvas from './CoinRushHostCanvas';
 import CoinRushOrient from './CoinRushOrient';
 import CoinRushWinner from './CoinRushWinner';
@@ -13,23 +13,27 @@ import { useIsLandscape } from './useIsLandscape';
 import { useReportLandscapeReady } from './useReportLandscapeReady';
 
 export function CoinRushHostView({ state }: GameHostProps) {
-  if (state.phase === 'orient') {
-    return <CoinRushOrient state={state} />;
-  }
+  const showGame =
+    state.phase === 'orient' ||
+    state.phase === 'countdown' ||
+    state.phase === 'playing' ||
+    state.phase === 'winner';
 
-  if (state.phase === 'countdown') {
-    return <CoinRushCountdown state={state} />;
-  }
+  if (!showGame) return null;
 
-  if (state.phase === 'playing') {
-    return <CoinRushHostCanvas state={state} />;
-  }
-
-  if (state.phase === 'winner') {
-    return <CoinRushWinner state={state} />;
-  }
-
-  return null;
+  return (
+    <>
+      <CoinRushHostCanvas state={state} />
+      {state.phase === 'orient' && <CoinRushOrient />}
+      {state.phase === 'countdown' && (
+        <GameCountdown
+          count={state.countdown > 0 ? state.countdown : 'GO!'}
+          hint={`First to ${COIN_RUSH_WIN_COINS} gold coins`}
+        />
+      )}
+      {state.phase === 'winner' && <CoinRushWinner state={state} />}
+    </>
+  );
 }
 
 export function CoinRushControllerView({

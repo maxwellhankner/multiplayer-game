@@ -28,6 +28,12 @@
   letter-spacing: 0.06em;
 }
 
+.hoe-down-derby .game-player-name {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
 /* Host game view */
 .hoe-down-derby.game-view {
   position: relative;
@@ -45,49 +51,24 @@
 }
 
 /* Winner overlay */
-.hoe-down-derby .winner-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(45, 24, 16, 0.65);
-  pointer-events: none;
-}
-
-.hoe-down-derby .winner-card {
-  background: var(--leather);
-  border: 3px solid var(--gold);
-  border-radius: 16px;
-  padding: 2.5rem 3rem;
-  text-align: center;
-  max-width: 480px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-}
-
-.hoe-down-derby .trophy {
-  font-size: 4rem;
-  margin-bottom: 0.5rem;
-}
-
-.hoe-down-derby .winner-card h2 {
-  font-size: 2.5rem;
+.hoe-down-derby .hoe-down-winner-card .game-phase-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.06em;
   color: var(--gold);
-  margin-bottom: 0.5rem;
 }
 
-.hoe-down-derby .rematch-hint {
-  color: var(--tan);
-  margin: 1rem 0;
-}
-
-.hoe-down-derby .final-standings {
+.hoe-down-final-standings {
   list-style: none;
   text-align: left;
+  width: 100%;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  font-size: 0.9rem;
 }
 
-.hoe-down-derby .final-standings li {
-  padding: 0.4rem 0;
+.hoe-down-final-standings li {
+  padding: 0.35rem 0;
   display: flex;
   align-items: center;
   gap: 0.5rem;

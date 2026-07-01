@@ -36,16 +36,15 @@ export default function CoinRushPaneGrid({
               top: `${pane.top * 100}%`,
               width: `${pane.width * 100}%`,
               height: `${pane.height * 100}%`,
-              borderColor: player.color,
               ['--pane-color' as string]: player.color,
             }}
           >
             {mode === 'play' && (
-              <div className="coin-rush-pane-label">
-                <span className="coin-rush-pane-name" style={{ color: player.color }}>
+              <div className="coin-rush-pane-play-body">
+                <span className="coin-rush-pane-name game-player-name pane-player-color">
                   {player.name}
                 </span>
-                <span className="coin-rush-pane-score">
+                <span className="coin-rush-pane-score pane-player-color">
                   {player.score}/{winCoins}
                 </span>
               </div>
@@ -53,7 +52,7 @@ export default function CoinRushPaneGrid({
 
             {mode === 'orient' && (
               <div className="coin-rush-pane-orient">
-                <p className="coin-rush-pane-center-name" style={{ color: player.color }}>
+                <p className="coin-rush-pane-center-name game-player-name pane-player-color">
                   {player.name}
                 </p>
                 <p
@@ -69,7 +68,7 @@ export default function CoinRushPaneGrid({
             )}
 
             {mode === 'countdown' && (
-              <p className="coin-rush-pane-center-name" style={{ color: player.color }}>
+              <p className="coin-rush-pane-center-name game-player-name pane-player-color">
                 {player.name}
               </p>
             )}
@@ -77,10 +76,10 @@ export default function CoinRushPaneGrid({
             {mode === 'winner' && (
               <div className="coin-rush-pane-winner-body">
                 {isWinner && <span className="coin-rush-pane-winner-badge">Winner</span>}
-                <p className="coin-rush-pane-center-name" style={{ color: player.color }}>
+                <p className="coin-rush-pane-center-name game-player-name pane-player-color">
                   {player.name}
                 </p>
-                <p className="coin-rush-pane-winner-score">
+                <p className="coin-rush-pane-winner-score pane-player-color">
                   {player.score} coin{player.score === 1 ? '' : 's'}
                 </p>
               </div>
