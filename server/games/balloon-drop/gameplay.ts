@@ -4,6 +4,7 @@ import {
   getBalloonTeam,
   getPlayerXBounds,
   isBalloonTeamMode,
+  rebalanceBalloonDropTeamLanes,
 } from '../../../shared/games/balloon-drop/teams.js';
 import {
   BALLOON_DROP_ARENA_WIDTH,
@@ -20,6 +21,7 @@ import {
   BALLOON_DROP_MOVE_SPEED,
   BALLOON_DROP_PLAYER_RADIUS,
   BALLOON_DROP_PLAYER_Y,
+  BALLOON_DROP_RANDOM_IMPULSE,
   BALLOON_DROP_WALL_BOUNCE,
 } from '../../../shared/games/balloon-drop/constants.js';
 
@@ -61,10 +63,10 @@ function playersInArena(
 function spawnBalloon(arenaId: string): BalloonState {
   return {
     arenaId,
-    x: BALLOON_DROP_ARENA_WIDTH / 2,
+    x: BALLOON_DROP_ARENA_WIDTH / 2 + (Math.random() - 0.5) * 14,
     y: 55 + Math.random() * 12,
-    vx: (Math.random() - 0.5) * BALLOON_DROP_DRIFT,
-    vy: -6 - Math.random() * 4,
+    vx: (Math.random() - 0.5) * BALLOON_DROP_DRIFT * 1.4,
+    vy: -8 - Math.random() * 6,
   };
 }
 
@@ -73,6 +75,7 @@ export function initBalloonDrop(room: BalloonDropRoom): void {
   room.balloons = [];
 
   const players = [...room.players.values()];
+  rebalanceBalloonDropTeamLanes(players);
   const playerCount = players.length;
   const arenaIds = new Set<string>();
 
@@ -118,7 +121,10 @@ function bounceHead(balloon: BalloonState, player: PlayerState): void {
 
   const bounce = BALLOON_DROP_BOUNCE_UP + Math.random() * 10;
   balloon.vy = Math.abs(bounce);
-  balloon.vx += nx * 6 + (Math.random() - 0.5) * BALLOON_DROP_DRIFT;
+  balloon.vx += nx * 8 + (Math.random() - 0.5) * BALLOON_DROP_DRIFT * 1.2;
+  if (Math.random() < 0.35) {
+    balloon.vy += (Math.random() - 0.3) * BALLOON_DROP_RANDOM_IMPULSE * 0.5;
+  }
 }
 
 function stepBalloon(
@@ -127,7 +133,16 @@ function stepBalloon(
   dt: number,
 ): boolean {
   balloon.vy -= BALLOON_DROP_GRAVITY * dt;
-  balloon.vx += (Math.random() - 0.5) * BALLOON_DROP_DRIFT * dt * 0.35;
+  balloon.vx += (Math.random() - 0.5) * BALLOON_DROP_DRIFT * dt * 0.75;
+  balloon.vy += (Math.random() - 0.5) * BALLOON_DROP_DRIFT * dt * 0.22;
+
+  if (Math.random() < 0.14) {
+    balloon.vx += (Math.random() - 0.5) * BALLOON_DROP_RANDOM_IMPULSE;
+  }
+  if (Math.random() < 0.08) {
+    balloon.vy += (Math.random() - 0.35) * BALLOON_DROP_RANDOM_IMPULSE * 0.65;
+  }
+
   balloon.vx = Math.max(-BALLOON_DROP_MAX_VX, Math.min(BALLOON_DROP_MAX_VX, balloon.vx));
   balloon.vy = Math.max(-BALLOON_DROP_MAX_VY, Math.min(BALLOON_DROP_MAX_VY, balloon.vy));
 
@@ -138,14 +153,17 @@ function stepBalloon(
   if (balloon.x < r) {
     balloon.x = r;
     balloon.vx = Math.abs(balloon.vx) * BALLOON_DROP_WALL_BOUNCE;
+    balloon.vy += Math.random() * 6;
   } else if (balloon.x > BALLOON_DROP_ARENA_WIDTH - r) {
     balloon.x = BALLOON_DROP_ARENA_WIDTH - r;
     balloon.vx = -Math.abs(balloon.vx) * BALLOON_DROP_WALL_BOUNCE;
+    balloon.vy += Math.random() * 6;
   }
 
   if (balloon.y > BALLOON_DROP_CEILING_Y) {
     balloon.y = BALLOON_DROP_CEILING_Y;
-    balloon.vy = -Math.abs(balloon.vy) * 0.55;
+    balloon.vy = -Math.abs(balloon.vy) * (0.45 + Math.random() * 0.25);
+    balloon.vx += (Math.random() - 0.5) * BALLOON_DROP_DRIFT;
   }
 
   for (const player of players) {

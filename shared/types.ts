@@ -25,6 +25,11 @@ export type CoinStickInput = {
   lookY: number;
 };
 
+export type DrunkDriverInput = {
+  gas: boolean;
+  steer: number;
+};
+
 /** @deprecated Discrete coin actions — use CoinStickInput */
 export type CoinAction = 'forward' | 'left' | 'right';
 

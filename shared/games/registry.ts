@@ -1,6 +1,7 @@
 import type { SessionMode } from '../session.js';
 import type { GameDefinition } from './types.js';
 import { scribbleTime } from './scribble-time/index.js';
+import { drunkDriver } from './drunk-driver/index.js';
 import { coinRush } from './coin-rush/index.js';
 import { balloonDrop } from './balloon-drop/index.js';
 import { hoeDownDerby } from './hoe-down-derby/index.js';
@@ -8,6 +9,7 @@ import { EXTRA_PLACEHOLDER_GAMES } from './placeholders.js';
 
 /** All registered games — newest first */
 const ALL_GAMES: GameDefinition[] = [
+  drunkDriver,
   scribbleTime,
   balloonDrop,
   coinRush,

@@ -5,7 +5,7 @@ import RoomSounds from '../components/RoomSounds';
 import ScreenControls from '../components/ScreenControls';
 import { useRoomState, useSocket } from '../hooks/useSocket';
 import { normalizeRoomCode } from '../../shared/routes';
-import type { BalloonInput, CoinStickInput, RoomState, ScribbleStroke } from '../../shared/types';
+import type { BalloonInput, CoinStickInput, DrunkDriverInput, RoomState, ScribbleStroke } from '../../shared/types';
 
 function bootedKey(roomId: string) {
   return `booted-${roomId}`;
@@ -243,6 +243,7 @@ export default function GuestRoomPage() {
   const onJump = () => socket.current?.emit('player:jump');
   const onCoinInput = (input: CoinStickInput) => socket.current?.emit('player:coin-input', input);
   const onBalloonInput = (input: BalloonInput) => socket.current?.emit('player:balloon-input', input);
+  const onDrunkInput = (input: DrunkDriverInput) => socket.current?.emit('player:drunk-input', input);
   const onScribblePrompt = (prompt: string) => socket.current?.emit('player:scribble-prompt', prompt);
   const onScribbleDraw = (strokes: ScribbleStroke[]) =>
     socket.current?.emit('player:scribble-draw', strokes);
@@ -268,7 +269,7 @@ export default function GuestRoomPage() {
 
   return (
     <>
-      <RoomSounds state={state} playerId={playerId} />
+      <RoomSounds state={state} />
       {!booted && (
         <ScreenControls
           onBack={state?.sessionMode !== 'pc-host' ? leaveRoom : undefined}
@@ -284,6 +285,7 @@ export default function GuestRoomPage() {
         onJump={onJump}
         onCoinInput={onCoinInput}
         onBalloonInput={onBalloonInput}
+        onDrunkInput={onDrunkInput}
         onScribblePrompt={onScribblePrompt}
         onScribbleDraw={onScribbleDraw}
         onScribblePick={onScribblePick}

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { SOUND_CATALOG } from '../audio/catalog';
 import { playPreviewFile, unlockAudio } from '../audio/engine';
 import { LIBRARY_PACKS, type LibraryPackId } from '../audio/library-packs';
 import SoundToggle from '../components/SoundToggle';
@@ -13,18 +14,14 @@ interface SoundButton {
   pack?: LibraryPackId;
 }
 
-const GAME_FILES: { file: string; title: string }[] = [
-  { file: 'player-join.ogg', title: 'Player join' },
-  { file: 'player-ready.ogg', title: 'Player ready' },
-  { file: 'countdown-tick.ogg', title: 'Countdown tick' },
-  { file: 'countdown-go.ogg', title: 'Countdown GO' },
-  { file: 'life-lost.ogg', title: 'Life lost' },
-  { file: 'win-crowd.mp3', title: 'Win — crowd' },
-  { file: 'win-jingle.ogg', title: 'Win — jingle' },
-  { file: 'win-confetti-a.ogg', title: 'Win — confetti A' },
-  { file: 'win-confetti-b.ogg', title: 'Win — confetti B' },
-  { file: 'win-confetti-c.ogg', title: 'Win — confetti C' },
-];
+const GAME_FILES: { file: string; title: string; pack?: LibraryPackId }[] = SOUND_CATALOG.flatMap(
+  (def) =>
+    def.clips.map((clip, index) => ({
+      file: clip.file,
+      pack: clip.pack,
+      title: def.clips.length > 1 ? `${def.label} (${index + 1})` : def.label,
+    })),
+);
 
 function codeFromFilename(file: string): string {
   return file.replace(/\.(ogg|mp3|wav)$/i, '');
@@ -84,11 +81,12 @@ export default function SoundsPreviewPage() {
       GAME_FILES.map((entry) => {
         const code = codeFromFilename(entry.file);
         return {
-          key: `game:${entry.file}`,
+          key: `game:${entry.pack ?? 'game'}:${entry.file}`,
           code,
           title: entry.title,
-          kind: 'game',
+          kind: entry.pack ? 'library' : 'game',
           file: entry.file,
+          pack: entry.pack,
         };
       }),
     [],
@@ -186,7 +184,7 @@ export default function SoundsPreviewPage() {
         <section className="panel sounds-preview-section">
           <h2>Game sounds ({filteredGame.length})</h2>
           <p className="hint sound-browse-section-hint">
-            Used during lobby, countdown, and win screens.
+            Wired to gameplay via the sound catalog.
           </p>
           <SoundGrid sounds={filteredGame} playingKey={playingKey} onPlay={playSound} />
         </section>

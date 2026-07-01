@@ -1,0 +1,17 @@
+export const DRUNK_FINISH_DISTANCE = 270;
+export const DRUNK_TRACK_LENGTH = 600;
+export const DRUNK_ROAD_WIDTH = 22;
+export const DRUNK_MAX_SPEED = 32;
+export const DRUNK_ACCEL = 22;
+export const DRUNK_DRAG = 6;
+export const DRUNK_WHEELBASE = 2.2;
+export const DRUNK_MAX_WHEEL_ANGLE = 0.52;
+export const DRUNK_WHEEL_SMOOTH = 14;
+export const DRUNK_MAX_LATERAL = 10;
+export const DRUNK_CAR_RADIUS = 1.1;
+export const DRUNK_LANE_GAP = 0.5;
+export const DRUNK_INPUT_DEADZONE = 0.08;
+export const DRUNK_STEER_OFFSET_MIN = -0.15;
+export const DRUNK_STEER_OFFSET_MAX = 0.15;
+export const DRUNK_OFFSET_MS_MIN = 500;
+export const DRUNK_OFFSET_MS_MAX = 1600;

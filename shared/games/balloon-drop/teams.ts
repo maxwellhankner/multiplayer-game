@@ -1,4 +1,45 @@
 import { BALLOON_DROP_ARENA_WIDTH, BALLOON_DROP_PLAYER_RADIUS } from './constants.js';
+import { isBot } from '../bots.js';
+
+export interface BalloonDropLanePlayer {
+  id: string;
+  lane: number;
+}
+
+/** Team mode: spread humans across teams (e.g. 2 humans + 2 bots → one human per team). */
+export function rebalanceBalloonDropTeamLanes(players: BalloonDropLanePlayer[]): void {
+  const count = players.length;
+  if (!isBalloonTeamMode(count)) return;
+
+  const humans = players.filter((p) => !isBot(p.id)).sort((a, b) => a.lane - b.lane);
+  const bots = players.filter((p) => isBot(p.id)).sort((a, b) => a.lane - b.lane);
+  if (humans.length < 2) return;
+
+  const teams: BalloonDropLanePlayer[][] = [[], []];
+
+  for (let i = 0; i < humans.length; i++) {
+    teams[i % 2].push(humans[i]);
+  }
+
+  for (const bot of bots) {
+    const team = teams[0].length <= teams[1].length ? 0 : 1;
+    teams[team].push(bot);
+  }
+
+  let lane = 0;
+  const laneById = new Map<string, number>();
+  for (const player of teams[0]) {
+    laneById.set(player.id, lane++);
+  }
+  for (const player of teams[1]) {
+    laneById.set(player.id, lane++);
+  }
+
+  for (const player of players) {
+    const nextLane = laneById.get(player.id);
+    if (nextLane !== undefined) player.lane = nextLane;
+  }
+}
 
 /** Team assignment from join order (lane) and lobby size. */
 export function getBalloonTeam(lane: number, playerCount: number): number {

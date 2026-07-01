@@ -136,19 +136,19 @@ export default function LobbySettingsPanel({
         <div className="game-mode-toggle" role="group" aria-label="Game selection mode">
           <button
             type="button"
-            className={`game-mode-btn${isSelectedMode ? ' game-mode-btn--active' : ''}`}
-            aria-pressed={isSelectedMode}
-            onClick={selectSelectedMode}
-          >
-            Selected
-          </button>
-          <button
-            type="button"
             className={`game-mode-btn${isRandomMode ? ' game-mode-btn--active' : ''}`}
             aria-pressed={isRandomMode}
             onClick={selectRandomMode}
           >
             Random
+          </button>
+          <button
+            type="button"
+            className={`game-mode-btn${isSelectedMode ? ' game-mode-btn--active' : ''}`}
+            aria-pressed={isSelectedMode}
+            onClick={selectSelectedMode}
+          >
+            Selected
           </button>
         </div>
 

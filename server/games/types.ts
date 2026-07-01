@@ -15,6 +15,7 @@ export interface BotTickContext {
   triggerJump: (playerId: string) => void;
   setCoinInput?: (playerId: string, input: import('../../shared/types.js').CoinStickInput) => void;
   setBalloonInput?: (playerId: string, input: BalloonInput) => void;
+  setDrunkInput?: (playerId: string, input: import('../../shared/types.js').DrunkDriverInput) => void;
   getHorseScreenX: (trackWidth: number) => number;
 }
 

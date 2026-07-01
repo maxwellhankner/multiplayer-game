@@ -1,4 +1,4 @@
-import type { BalloonInput, CoinStickInput, RoomState, ScribbleStroke } from '../../shared/types';
+import type { BalloonInput, CoinStickInput, DrunkDriverInput, RoomState, ScribbleStroke } from '../../shared/types';
 import { getGameClientModule, getGameThemeClass } from './registry';
 
 interface GameControllerRouterProps {
@@ -7,6 +7,7 @@ interface GameControllerRouterProps {
   onJump: () => void;
   onCoinInput: (input: CoinStickInput) => void;
   onBalloonInput: (input: BalloonInput) => void;
+  onDrunkInput: (input: DrunkDriverInput) => void;
   onScribblePrompt: (prompt: string) => void;
   onScribbleDraw: (strokes: ScribbleStroke[]) => void;
   onScribblePick: (artistId: string) => void;
@@ -19,6 +20,7 @@ export default function GameControllerRouter({
   onJump,
   onCoinInput,
   onBalloonInput,
+  onDrunkInput,
   onScribblePrompt,
   onScribbleDraw,
   onScribblePick,
@@ -43,6 +45,7 @@ export default function GameControllerRouter({
           onJump={onJump}
           onCoinInput={onCoinInput}
           onBalloonInput={onBalloonInput}
+          onDrunkInput={onDrunkInput}
           onScribblePrompt={onScribblePrompt}
           onScribbleDraw={onScribbleDraw}
           onScribblePick={onScribblePick}

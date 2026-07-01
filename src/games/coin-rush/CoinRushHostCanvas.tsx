@@ -21,6 +21,12 @@ interface CoinMesh {
   spin: number;
 }
 
+interface PlayerMesh {
+  id: string;
+  group: THREE.Group;
+  bodyMat: THREE.MeshStandardMaterial;
+}
+
 export default function CoinRushHostCanvas({ state }: CoinRushHostCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stateRef = useRef(state);
@@ -83,7 +89,11 @@ export default function CoinRushHostCanvas({ state }: CoinRushHostCanvasProps) {
     });
 
     const coinMeshes = new Map<string, CoinMesh>();
+    const playerMeshes = new Map<string, PlayerMesh>();
     const cameras: THREE.PerspectiveCamera[] = [];
+
+    const bodyGeo = new THREE.CapsuleGeometry(0.32, 0.85, 4, 12);
+    const headGeo = new THREE.SphereGeometry(0.26, 12, 12);
 
     let width = container.clientWidth;
     let height = container.clientHeight;
@@ -126,6 +136,48 @@ export default function CoinRushHostCanvas({ state }: CoinRushHostCanvasProps) {
       }
     };
 
+    const syncPlayers = (players: RoomState['players']) => {
+      const ids = new Set(players.map((p) => p.id));
+      for (const [id, entry] of playerMeshes) {
+        if (!ids.has(id)) {
+          scene.remove(entry.group);
+          entry.bodyMat.dispose();
+          playerMeshes.delete(id);
+        }
+      }
+
+      for (let index = 0; index < players.length; index++) {
+        const player = players[index];
+        let entry = playerMeshes.get(player.id);
+        if (!entry) {
+          const group = new THREE.Group();
+          const bodyMat = new THREE.MeshStandardMaterial({
+            color: player.color,
+            roughness: 0.72,
+            metalness: 0.05,
+          });
+          const body = new THREE.Mesh(bodyGeo, bodyMat);
+          body.position.y = 0.55;
+          const head = new THREE.Mesh(headGeo, bodyMat);
+          head.position.y = 1.22;
+          group.add(body, head);
+          scene.add(group);
+          entry = { id: player.id, group, bodyMat };
+          playerMeshes.set(player.id, entry);
+        } else {
+          entry.bodyMat.color.set(player.color);
+        }
+
+        entry.group.position.set(player.px, 0, player.pz);
+        entry.group.rotation.y = Math.PI - player.yaw;
+
+        const layer = index + 1;
+        entry.group.traverse((obj) => {
+          obj.layers.set(layer);
+        });
+      }
+    };
+
     const renderFrame = () => {
       const dt = clock.getDelta();
       const room = stateRef.current;
@@ -137,6 +189,7 @@ export default function CoinRushHostCanvas({ state }: CoinRushHostCanvasProps) {
       }
 
       syncCoins(room.coins);
+      syncPlayers(players);
 
       const t = performance.now() * 0.001;
       for (const entry of coinMeshes.values()) {
@@ -178,6 +231,11 @@ export default function CoinRushHostCanvas({ state }: CoinRushHostCanvasProps) {
         cam.aspect = vw / vh;
         cam.updateProjectionMatrix();
 
+        cam.layers.set(0);
+        for (let j = 0; j < players.length; j++) {
+          if (j !== i) cam.layers.enable(j + 1);
+        }
+
         renderer.setViewport(vx, vy, vw, vh);
         renderer.setScissor(vx, vy, vw, vh);
         renderer.render(scene, cam);
@@ -196,6 +254,13 @@ export default function CoinRushHostCanvas({ state }: CoinRushHostCanvasProps) {
         scene.remove(entry.mesh);
       }
       coinMeshes.clear();
+      for (const entry of playerMeshes.values()) {
+        scene.remove(entry.group);
+        entry.bodyMat.dispose();
+      }
+      playerMeshes.clear();
+      bodyGeo.dispose();
+      headGeo.dispose();
       coinGeo.dispose();
       coinMat.dispose();
       wallMat.dispose();

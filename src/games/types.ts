@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import type { BalloonInput, CoinStickInput, RoomState, ScribbleStroke } from '../../shared/types';
+import type { BalloonInput, CoinStickInput, DrunkDriverInput, RoomState, ScribbleStroke } from '../../shared/types';
 
 export interface GameHostProps {
   state: RoomState;
@@ -11,6 +11,7 @@ export interface GameControllerProps {
   onJump?: () => void;
   onCoinInput?: (input: CoinStickInput) => void;
   onBalloonInput?: (input: BalloonInput) => void;
+  onDrunkInput?: (input: DrunkDriverInput) => void;
   onScribblePrompt?: (prompt: string) => void;
   onScribbleDraw?: (strokes: ScribbleStroke[]) => void;
   onScribblePick?: (artistId: string) => void;

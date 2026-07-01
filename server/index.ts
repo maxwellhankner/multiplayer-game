@@ -20,9 +20,11 @@ import {
   removePlayer,
   serializeRoom,
   setPlayerReady,
+  setPlayerDrunkInput,
   setPlayerLandscapeReady,
   setPlayerBalloonInput,
   setPlayerCoinInput,
+  setPlayerDrunkInput,
   setTrackWidth,
   submitScribbleDrawing,
   submitScribblePick,
@@ -279,6 +281,19 @@ io.on('connection', (socket) => {
     if (!payload || typeof payload !== 'object') return;
     const data = payload as Record<string, unknown>;
     setPlayerBalloonInput(room, socket.id, { moveX: Number(data.moveX) });
+  });
+
+  socket.on('player:drunk-input', (payload: unknown) => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (!payload || typeof payload !== 'object') return;
+    const data = payload as Record<string, unknown>;
+    setPlayerDrunkInput(room, socket.id, {
+      gas: Boolean(data.gas),
+      steer: Number(data.steer),
+    });
   });
 
   socket.on('player:scribble-prompt', (payload: unknown, cb?: (ok: boolean) => void) => {

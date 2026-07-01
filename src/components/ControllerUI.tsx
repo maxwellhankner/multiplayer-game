@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import type { BalloonInput, CoinStickInput, RoomState, ScribbleStroke } from '../../shared/types';
+import type { BalloonInput, CoinStickInput, DrunkDriverInput, RoomState, ScribbleStroke } from '../../shared/types';
 import { isBot } from '../../shared/games/bots';
 import { getSessionModeLabel } from '../../shared/session';
 import GameControllerRouter from '../games/GameControllerRouter';
@@ -18,6 +18,7 @@ interface ControllerUIProps {
   onJump: () => void;
   onCoinInput: (input: CoinStickInput) => void;
   onBalloonInput: (input: BalloonInput) => void;
+  onDrunkInput: (input: DrunkDriverInput) => void;
   onScribblePrompt: (prompt: string) => void;
   onScribbleDraw: (strokes: ScribbleStroke[]) => void;
   onScribblePick: (artistId: string) => void;
@@ -44,6 +45,7 @@ export default function ControllerUI({
   onJump,
   onCoinInput,
   onBalloonInput,
+  onDrunkInput,
   onScribblePrompt,
   onScribbleDraw,
   onScribblePick,
@@ -215,6 +217,7 @@ export default function ControllerUI({
           onJump={onJump}
           onCoinInput={onCoinInput}
           onBalloonInput={onBalloonInput}
+          onDrunkInput={onDrunkInput}
           onScribblePrompt={onScribblePrompt}
           onScribbleDraw={onScribbleDraw}
           onScribblePick={onScribblePick}

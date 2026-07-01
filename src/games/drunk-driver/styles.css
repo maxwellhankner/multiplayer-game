@@ -1,0 +1,389 @@
+/* Drunk Driver — desert race, coin-rush-style overlays */
+
+.drunk-driver-host {
+  position: fixed;
+  inset: 0;
+  background: #c68642;
+}
+
+.drunk-driver-host canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.drunk-driver-blur-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 2;
+}
+
+.drunk-driver-pane {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid var(--pane-color, #888);
+  pointer-events: none;
+  z-index: 4;
+}
+
+.drunk-driver-pane--orient,
+.drunk-driver-pane--startlight,
+.drunk-driver-pane--winner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.drunk-driver-pane--play {
+  background: transparent;
+  border-color: transparent;
+}
+
+.drunk-driver-pane--champion {
+  background: color-mix(in srgb, var(--pane-color) 42%, rgba(0, 0, 0, 0.45));
+  box-shadow: inset 0 0 0 2px rgba(255, 224, 130, 0.45);
+}
+
+.drunk-driver-pane-label {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  justify-content: space-between;
+  font-size: clamp(0.65rem, 1.8vw, 0.85rem);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+}
+
+.drunk-driver-pane-name {
+  font-weight: 700;
+}
+
+.drunk-driver-pane-score {
+  font-weight: 600;
+  color: #ffe082;
+}
+
+.drunk-driver-pane-orient,
+.drunk-driver-pane-winner-body {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.drunk-driver-pane-center-name {
+  font-weight: 700;
+  font-size: clamp(0.85rem, 2.5vw, 1.1rem);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.drunk-driver-pane-orient-status {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.drunk-driver-pane-orient-status--ready {
+  color: #a5f3a5;
+}
+
+.drunk-driver-pane-winner-badge {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #ffe082;
+}
+
+.drunk-driver-pane-winner-score {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.drunk-driver-orient,
+.drunk-driver-startlight,
+.drunk-driver-winner {
+  position: fixed;
+  inset: 0;
+  background: #8b5a2b;
+  z-index: 5;
+}
+
+.drunk-driver-orient::before,
+.drunk-driver-startlight::before,
+.drunk-driver-winner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.38);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.drunk-driver-orient-center {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.drunk-driver-orient-center .coin-rush-rotate-prompt {
+  color: #fff;
+  padding: 2rem 2.5rem;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.drunk-driver-spotlight {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.drunk-driver-spotlight-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 2rem 2.5rem 2.25rem;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.drunk-driver-spotlight-fixture {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(42vw, 300px);
+  height: min(42vh, 300px);
+}
+
+.drunk-driver-spotlight-beam {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 100%;
+  height: 100%;
+  border-radius: 50% 50% 45% 45%;
+  opacity: 0.45;
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+.drunk-driver-spotlight-beam--red {
+  background: radial-gradient(ellipse at center, #ff4444 0%, transparent 70%);
+}
+
+.drunk-driver-spotlight-beam--yellow {
+  background: radial-gradient(ellipse at center, #ffcc00 0%, transparent 70%);
+}
+
+.drunk-driver-spotlight-beam--green {
+  background: radial-gradient(ellipse at center, #44dd66 0%, transparent 70%);
+}
+
+.drunk-driver-spotlight-lens {
+  position: relative;
+  z-index: 1;
+  width: clamp(4rem, 12vw, 6rem);
+  height: clamp(4rem, 12vw, 6rem);
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 40px currentColor, inset 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+.drunk-driver-spotlight-lens--red {
+  background: #cc2222;
+  color: #ff4444;
+}
+
+.drunk-driver-spotlight-lens--yellow {
+  background: #cc9900;
+  color: #ffcc00;
+}
+
+.drunk-driver-spotlight-lens--green {
+  background: #22aa44;
+  color: #44dd66;
+}
+
+.drunk-driver-spotlight-hint {
+  color: #fff;
+  font-size: clamp(0.85rem, 2vw, 1rem);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+}
+
+.drunk-driver-winner-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2.5rem 3.5rem;
+  max-width: min(92vw, 520px);
+  text-align: center;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.drunk-driver-winner-trophy {
+  font-size: clamp(2.5rem, 8vw, 3.5rem);
+}
+
+.drunk-driver-winner-title {
+  font-size: clamp(1.75rem, 6vw, 2.5rem);
+  color: #fff;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+}
+
+.drunk-driver-winner-subtitle {
+  color: #fff;
+  font-size: 1.1rem;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+}
+
+.drunk-driver-winner-hint {
+  margin-top: 0.75rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.85rem;
+}
+
+.drunk-driver-portrait-gate {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a1410;
+}
+
+.drunk-driver-landscape-play {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  min-height: 100dvh;
+  background: #1a1410;
+}
+
+.drunk-driver-mobile-startlight {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.drunk-driver-gas-pedal {
+  grid-row: 2;
+  grid-column: 1;
+  align-self: end;
+  margin: 0.5rem;
+  min-height: 55%;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #3d3d3d 0%, #1a1a1a 100%);
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  touch-action: none;
+  user-select: none;
+  box-shadow: 0 4px 0 #0a0a0a, inset 0 2px 0 rgba(255, 255, 255, 0.15);
+}
+
+.drunk-driver-gas-pedal:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #0a0a0a;
+}
+
+.drunk-driver-steer-pad {
+  grid-row: 2;
+  grid-column: 2;
+  align-self: end;
+  margin: 0.5rem;
+  min-height: 55%;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  touch-action: none;
+  user-select: none;
+}
+
+.drunk-driver-steer-wheel {
+  width: clamp(5rem, 22vw, 7rem);
+  height: clamp(5rem, 22vw, 7rem);
+  border-radius: 50%;
+  border: 6px solid #555;
+  background: radial-gradient(circle at 30% 30%, #666, #222);
+  position: relative;
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.5);
+}
+
+.drunk-driver-steer-spoke {
+  position: absolute;
+  top: 50%;
+  left: 8%;
+  right: 8%;
+  height: 8px;
+  margin-top: -4px;
+  background: #444;
+  border-radius: 4px;
+}
+
+.drunk-driver-steer-spoke--b {
+  transform: rotate(90deg);
+}
+
+.drunk-driver-steer-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.drunk-driver-landscape-play .controller-game-hud {
+  grid-column: 1 / -1;
+}

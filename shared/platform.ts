@@ -29,21 +29,21 @@ export const GAME_SELECTION_OPTIONS: {
   description: string;
 }[] = [
   {
-    id: 'specific',
-    title: 'Selected',
-    description: 'Always play one chosen game.',
-  },
-  {
     id: 'random-from-pool',
     title: 'Random',
     description: 'Randomly choose from selected games.',
+  },
+  {
+    id: 'specific',
+    title: 'Selected',
+    description: 'Always play one chosen game.',
   },
 ];
 
 export function getDefaultLobbySettings(sessionMode: SessionMode): LobbySettings {
   const playableIds = getPlayableGamesForSessionMode(sessionMode).map((g) => g.id);
   return {
-    gameSelectionMode: 'specific',
+    gameSelectionMode: 'random-from-pool',
     specificGameId: playableIds[0] ?? null,
     gamePool: playableIds,
   };
@@ -51,12 +51,7 @@ export function getDefaultLobbySettings(sessionMode: SessionMode): LobbySettings
 
 /** Random mode with every playable game in the pool. */
 export function getResetLobbySettings(sessionMode: SessionMode): LobbySettings {
-  const playableIds = getPlayableGamesForSessionMode(sessionMode).map((g) => g.id);
-  return {
-    gameSelectionMode: 'random-from-pool',
-    specificGameId: playableIds[0] ?? null,
-    gamePool: playableIds,
-  };
+  return getDefaultLobbySettings(sessionMode);
 }
 
 export const DEFAULT_LOBBY_SETTINGS: LobbySettings = getDefaultLobbySettings('pc-host');

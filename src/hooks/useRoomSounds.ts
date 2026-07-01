@@ -1,9 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { isBot } from '../../shared/games/bots';
 import type { RoomState } from '../../shared/types';
 import { useAudio } from '../audio/AudioProvider';
 
-export function useRoomSounds(state: RoomState | null, playerId?: string | null) {
+export function useRoomSounds(state: RoomState | null) {
   const { play } = useAudio();
   const prevRef = useRef<RoomState | null>(null);
 
@@ -20,48 +19,29 @@ export function useRoomSounds(state: RoomState | null, playerId?: string | null)
 
     if (lobbyish) {
       const prevIds = new Set(prev.players.map((p) => p.id));
+      const currentIds = new Set(state.players.map((p) => p.id));
+
       for (const player of state.players) {
-        if (!prevIds.has(player.id) && !isBot(player.id)) {
-          play('playerJoin');
+        if (!prevIds.has(player.id)) {
+          play('lobbyJoin');
         }
       }
 
-      for (const player of state.players) {
-        if (isBot(player.id)) continue;
-        const was = prev.players.find((p) => p.id === player.id);
-        if (player.ready && was && !was.ready) {
-          play('playerReady');
+      for (const player of prev.players) {
+        if (!currentIds.has(player.id)) {
+          play('lobbyLeave');
         }
       }
     }
 
-    if (state.phase === 'countdown' && prev.countdown !== state.countdown) {
-      if (state.countdown > 0) {
+    if (state.phase === 'countdown' && state.countdown > 0) {
+      const enteredCountdown = prev.phase !== 'countdown';
+      const tickedDown = prev.countdown !== state.countdown;
+      if (enteredCountdown || tickedDown) {
         play('countdownTick');
-      } else {
-        play('countdownGo');
       }
-    }
-
-    if (state.phase === 'playing' && prev.phase === 'playing') {
-      for (const player of state.players) {
-        const was = prev.players.find((p) => p.id === player.id);
-        if (!was) continue;
-
-        const lostLife = player.lives < was.lives;
-        const newlyEliminated = !was.eliminated && player.eliminated;
-        if (!lostLife && !newlyEliminated) continue;
-
-        if (!playerId || player.id === playerId) {
-          play('lifeLost');
-        }
-      }
-    }
-
-    if (prev.phase !== 'winner' && state.phase === 'winner' && state.winnerId) {
-      play('win');
     }
 
     prevRef.current = state;
-  }, [state, playerId, play]);
+  }, [state, play]);
 }

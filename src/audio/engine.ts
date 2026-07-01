@@ -1,11 +1,17 @@
 import { Howl, Howler } from 'howler';
-import { SOUND_CATALOG, getSoundDefinition, type SoundClip, type SoundId } from './catalog';
+import { SOUND_CATALOG, type SoundClip, type SoundId } from './catalog';
 import { libraryPackAudioUrl, type LibraryPackId } from './library-packs';
 
 const MUTE_KEY = 'sfx-muted';
 
+function readMutedPreference(): boolean {
+  const stored = localStorage.getItem(MUTE_KEY);
+  if (stored === null) return true;
+  return stored === '1';
+}
+
 let unlocked = false;
-let muted = localStorage.getItem(MUTE_KEY) === '1';
+let muted = readMutedPreference();
 const howls = new Map<string, Howl>();
 
 export function isSfxMuted(): boolean {
@@ -42,10 +48,15 @@ function getHowl(src: string, volume = 1): Howl {
   return howl;
 }
 
+function clipUrl(clip: SoundClip): string {
+  if (clip.pack) return librarySoundUrl(clip.pack, clip.file);
+  return gameSoundUrl(clip.file);
+}
+
 function preloadAllCatalogSounds(): void {
   for (const def of SOUND_CATALOG) {
     for (const clip of def.clips) {
-      getHowl(gameSoundUrl(clip.file), clip.volume ?? 1);
+      getHowl(clipUrl(clip), clip.volume ?? 1);
     }
   }
 }
@@ -73,20 +84,14 @@ function playClip(src: string, volume: number, delay = 0): void {
   }
 }
 
-function playClips(clips: SoundClip[], urlForFile: (file: string) => string): void {
-  for (const clip of clips) {
-    playClip(urlForFile(clip.file), clip.volume ?? 1, clip.delay ?? 0);
-  }
-}
-
 export function playSound(id: SoundId): void {
   if (muted || !unlocked) return;
 
-  try {
-    const def = getSoundDefinition(id);
-    playClips(def.clips, gameSoundUrl);
-  } catch {
-    // ignore
+  const def = SOUND_CATALOG.find((s) => s.id === id);
+  if (!def) return;
+
+  for (const clip of def.clips) {
+    playClip(clipUrl(clip), clip.volume ?? 1, clip.delay ?? 0);
   }
 }
 

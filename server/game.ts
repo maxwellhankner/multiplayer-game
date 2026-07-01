@@ -1,4 +1,4 @@
-import type { BalloonInput, BalloonState, CoinStickInput, CoinState, GamePhase, LobbySettings, ObstacleState, PlayerState, RoomState, ScribblePhase, ScribbleStroke, SessionMode } from '../shared/types.js';
+import type { BalloonInput, BalloonState, CoinStickInput, CoinState, DrunkDriverInput, GamePhase, LobbySettings, ObstacleState, PlayerState, RoomState, ScribblePhase, ScribbleStroke, SessionMode } from '../shared/types.js';
 import { GAME_CONSTANTS, GAMEPLAY, getHorseHitboxBounds, getJumpHeightAtPhase, MAX_PLAYERS, PLAYER_COLORS } from '../shared/constants.js';
 import { getSessionWinPlayerIds } from '../shared/games/session-wins.js';
 import { isBot, allHumansReady } from '../shared/games/bots.js';
@@ -20,6 +20,14 @@ import {
   tickScribbleTime,
 } from './games/scribble-time/index.js';
 import { clearScribbleTimeBots } from './games/scribble-time/module.js';
+import { clearHoeDownBotJumpPlans } from './games/hoe-down-derby/index.js';
+import {
+  clearDrunkDriverState,
+  initDrunkDriver,
+  setDrunkDriverInput,
+  tickDrunkDriver,
+} from './games/drunk-driver/gameplay.js';
+import { clearDrunkDriverBots } from './games/drunk-driver/module.js';
 import {
   addBotToRoom,
   canAddBot,
@@ -32,6 +40,9 @@ const SCROLL_SPEED = 5;
 const DEFAULT_TRACK_WIDTH = 1200;
 const COUNTDOWN_SECONDS = 3;
 
+function gameUsesOrientPhase(gameId: string | null): boolean {
+  return gameId === 'coin-rush' || gameId === 'drunk-driver';
+}
 
 interface Room {
   id: string;
@@ -45,6 +56,7 @@ interface Room {
   balloons: BalloonState[];
   coinInputs: Map<string, CoinStickInput>;
   balloonInputs: Map<string, BalloonInput>;
+  drunkInputs: Map<string, DrunkDriverInput>;
   scrollX: number;
   countdown: number;
   winnerId: string | null;
@@ -81,6 +93,7 @@ function buildEmptyRoom(id: string, sessionMode: SessionMode): Room {
     balloons: [],
     coinInputs: new Map(),
     balloonInputs: new Map(),
+    drunkInputs: new Map(),
     scrollX: 0,
     countdown: COUNTDOWN_SECONDS,
     winnerId: null,
@@ -263,6 +276,7 @@ export function importDevRoomSnapshots(snapshots: DevRoomSnapshot[]): void {
       balloons: [],
       coinInputs: new Map(),
       balloonInputs: new Map(),
+      drunkInputs: new Map(),
       scrollX: 0,
       countdown: COUNTDOWN_SECONDS,
       winnerId: null,
@@ -322,6 +336,7 @@ export function rejoinPlayer(
   room.players.delete(oldPlayerId);
   room.coinInputs.delete(oldPlayerId);
   room.balloonInputs.delete(oldPlayerId);
+  room.drunkInputs.delete(oldPlayerId);
   room.players.set(newSocketId, player);
   reindexLanes(room);
   return player;
@@ -391,6 +406,7 @@ export function removePlayer(room: Room, socketId: string): void {
   room.players.delete(socketId);
   room.coinInputs.delete(socketId);
   room.balloonInputs.delete(socketId);
+  room.drunkInputs.delete(socketId);
   reindexLanes(room);
   if (room.phase === 'orient') {
     tryBeginCountdown(room);
@@ -424,7 +440,7 @@ function allPlayersLandscapeReady(room: Room): boolean {
 }
 
 function tryBeginCountdown(room: Room): void {
-  if (room.phase !== 'orient' || room.activeGameId !== 'coin-rush') return;
+  if (room.phase !== 'orient' || !gameUsesOrientPhase(room.activeGameId)) return;
   if (!allPlayersLandscapeReady(room)) return;
   room.phase = 'countdown';
   room.countdown = COUNTDOWN_SECONDS;
@@ -444,7 +460,9 @@ function beginRace(room: Room): void {
 
   room.activeGameId = gameId;
   const isCoinRush = gameId === 'coin-rush';
-  room.phase = isCoinRush ? 'orient' : 'countdown';
+  const isDrunkDriver = gameId === 'drunk-driver';
+  const isOrientGame = gameUsesOrientPhase(gameId);
+  room.phase = isOrientGame ? 'orient' : 'countdown';
   room.countdown = COUNTDOWN_SECONDS;
   room.countdownTimer = 0;
   room.obstacles = [];
@@ -459,6 +477,10 @@ function beginRace(room: Room): void {
     clearCoinRushBots();
     initCoinRush(room);
   }
+  if (isDrunkDriver) {
+    clearDrunkDriverBots();
+    initDrunkDriver(room);
+  }
   if (isBalloonDrop) {
     clearBalloonDropBots();
     initBalloonDrop(room);
@@ -467,11 +489,14 @@ function beginRace(room: Room): void {
     clearScribbleTimeBots();
     initScribbleTime(room);
   }
+  if (gameId === 'hoe-down-derby') {
+    clearHoeDownBotJumpPlans();
+  }
 
   for (const p of room.players.values()) {
     p.ready = false;
     p.landscapeReady = isBot(p.id);
-    if (!isCoinRush && !isBalloonDrop && !isScribbleTime) {
+    if (!isCoinRush && !isBalloonDrop && !isScribbleTime && !isDrunkDriver) {
       p.lives = MAX_LIVES;
       p.eliminated = false;
       p.jumpPhase = 0;
@@ -482,7 +507,7 @@ function beginRace(room: Room): void {
     p.score = 0;
   }
 
-  if (isCoinRush) {
+  if (isOrientGame) {
     tryBeginCountdown(room);
   }
 }
@@ -501,7 +526,7 @@ export function setPlayerReady(room: Room, socketId: string): boolean {
 }
 
 export function setPlayerLandscapeReady(room: Room, socketId: string): boolean {
-  if (room.phase !== 'orient' || room.activeGameId !== 'coin-rush') return false;
+  if (room.phase !== 'orient' || !gameUsesOrientPhase(room.activeGameId)) return false;
   const player = room.players.get(socketId);
   if (!player || isBot(socketId) || player.landscapeReady) return false;
 
@@ -622,6 +647,12 @@ export function triggerJump(room: Room, socketId: string): boolean {
   return true;
 }
 
+export function setPlayerDrunkInput(room: Room, socketId: string, input: DrunkDriverInput): boolean {
+  if (room.activeGameId !== 'drunk-driver') return false;
+  if (room.phase !== 'playing' && room.phase !== 'countdown') return false;
+  return setDrunkDriverInput(room, socketId, input);
+}
+
 export function setPlayerCoinInput(room: Room, socketId: string, input: CoinStickInput): boolean {
   if (room.activeGameId !== 'coin-rush') return false;
   if (room.phase !== 'playing' && room.phase !== 'countdown') return false;
@@ -675,6 +706,7 @@ function resetRoomToLobby(room: Room): void {
   room.balloons = [];
   room.coinInputs.clear();
   room.balloonInputs.clear();
+  room.drunkInputs.clear();
   room.scrollX = 0;
   room.gameTime = 0;
   room.lastSpawnX = 0;
@@ -683,6 +715,8 @@ function resetRoomToLobby(room: Room): void {
   room.winsAwarded = false;
   clearCoinRushBots();
   clearBalloonDropBots();
+  clearDrunkDriverBots();
+  clearDrunkDriverState();
   clearScribbleTimeState(room);
 
   for (const p of room.players.values()) {
@@ -736,6 +770,9 @@ function runGameBotTick(room: Room, dt: number): void {
     setBalloonInput: (playerId, input) => {
       setBalloonInput(room, playerId, input);
     },
+    setDrunkInput: (playerId, input) => {
+      setDrunkDriverInput(room, playerId, input);
+    },
     getHorseScreenX,
   }, dt);
 }
@@ -757,6 +794,12 @@ export function tickRoom(room: Room, dt: number): void {
   }
 
   if (room.phase === 'playing') {
+    if (room.activeGameId === 'drunk-driver') {
+      tickDrunkDriver(room, dt);
+      runGameBotTick(room, dt);
+      return;
+    }
+
     if (room.activeGameId === 'coin-rush') {
       tickCoinRush(room, dt);
       runGameBotTick(room, dt);

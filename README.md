@@ -27,9 +27,10 @@ npm run build
 npm start
 ```
 
-## Project layout
+## Project docs
 
-See [development.md](./development.md) for architecture, game modules, and roadmap.
+- [project-context.md](./project-context.md) — how the app works (architecture, flow, solo dev)
+- [development.md](./development.md) — upcoming features and planning
 
 ## Hoe Down Derby rules
 

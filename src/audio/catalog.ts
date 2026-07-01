@@ -1,17 +1,15 @@
-export type SoundId =
-  | 'playerJoin'
-  | 'playerReady'
-  | 'countdownTick'
-  | 'countdownGo'
-  | 'lifeLost'
-  | 'win';
+import type { LibraryPackId } from './library-packs';
+
+export type SoundId = string;
 
 export interface SoundClip {
-  /** Filename under /sounds/game/ */
+  /** Filename under /sounds/game/ or a Kenney library pack */
   file: string;
   volume?: number;
   /** Seconds to delay before playing (for layered SFX) */
   delay?: number;
+  /** Kenney library pack — omit for files under /sounds/game/ */
+  pack?: LibraryPackId;
 }
 
 export interface SoundDefinition {
@@ -21,49 +19,25 @@ export interface SoundDefinition {
   clips: SoundClip[];
 }
 
-/** Game sounds currently wired to room events — edit files in public/sounds/game/ */
+/** Game sounds wired to room events — add entries here as we hook them up. */
 export const SOUND_CATALOG: SoundDefinition[] = [
   {
-    id: 'playerJoin',
-    label: 'Player join',
-    when: 'A human joins the lobby or returns from winner screen',
-    clips: [{ file: 'player-join.ogg', volume: 0.85 }],
+    id: 'lobbyJoin',
+    label: 'Lobby join',
+    when: 'A player or bot joins the lobby',
+    clips: [{ file: 'confirmation_001.ogg', pack: 'interface', volume: 0.85 }],
   },
   {
-    id: 'playerReady',
-    label: 'Player ready',
-    when: 'A human taps Ready in the lobby',
-    clips: [{ file: 'player-ready.ogg', volume: 0.8 }],
+    id: 'lobbyLeave',
+    label: 'Lobby leave',
+    when: 'A player or bot leaves the lobby',
+    clips: [{ file: 'minimize_006.ogg', pack: 'interface', volume: 0.85 }],
   },
   {
     id: 'countdownTick',
     label: 'Countdown tick',
-    when: 'Each second of the pre-game countdown (3, 2, 1…)',
-    clips: [{ file: 'countdown-tick.ogg', volume: 0.9 }],
-  },
-  {
-    id: 'countdownGo',
-    label: 'Countdown GO',
-    when: 'Countdown reaches zero',
-    clips: [{ file: 'countdown-go.ogg', volume: 0.85 }],
-  },
-  {
-    id: 'lifeLost',
-    label: 'Life lost',
-    when: 'A player loses a life or is eliminated (host: anyone; mobile: you only)',
-    clips: [{ file: 'life-lost.ogg', volume: 0.85 }],
-  },
-  {
-    id: 'win',
-    label: 'Win',
-    when: 'A winner is declared',
-    clips: [
-      { file: 'win-crowd.mp3', volume: 0.75 },
-      { file: 'win-jingle.ogg', volume: 0.55 },
-      { file: 'win-confetti-a.ogg', volume: 0.5 },
-      { file: 'win-confetti-b.ogg', volume: 0.5, delay: 0.04 },
-      { file: 'win-confetti-c.ogg', volume: 0.5, delay: 0.08 },
-    ],
+    when: 'Each second of the pre-game countdown (3, 2, 1)',
+    clips: [{ file: 'glass_005.ogg', pack: 'interface', volume: 0.9 }],
   },
 ];
 
