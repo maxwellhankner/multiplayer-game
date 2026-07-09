@@ -11,9 +11,13 @@ export interface BotTickContext {
     obstacles: { lane: number; worldX: number }[];
     coins?: { id: string; x: number; z: number }[];
     balloons?: { arenaId: string; x: number; y: number; vx: number; vy: number }[];
+    players?: PlayerState[];
   };
   triggerJump: (playerId: string) => void;
   setCoinInput?: (playerId: string, input: import('../../shared/types.js').CoinStickInput) => void;
+  setShotsFiredInput?: (playerId: string, input: import('../../shared/types.js').CoinStickInput) => void;
+  triggerShotsFiredShoot?: (playerId: string) => void;
+  triggerShotsFiredMelee?: (playerId: string) => void;
   setBalloonInput?: (playerId: string, input: BalloonInput) => void;
   setDrunkInput?: (playerId: string, input: import('../../shared/types.js').DrunkDriverInput) => void;
   getHorseScreenX: (trackWidth: number) => number;

@@ -1,0 +1,297 @@
+.shots-fired-host {
+  position: fixed;
+  inset: 0;
+  background: #6b7f96;
+}
+
+.shots-fired-host canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.shots-fired-pane {
+  position: absolute;
+  box-sizing: border-box;
+  border: clamp(6px, 0.9vw, 12px) solid var(--pane-color, #888);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.shots-fired-pane--orient,
+.shots-fired-pane--countdown,
+.shots-fired-pane--winner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--pane-color) 38%, #6b7f96);
+}
+
+.shots-fired-pane-orient {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.shots-fired-pane-orient-status {
+  margin: 0;
+  font-size: clamp(0.65rem, 1.2vw, 0.85rem);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+}
+
+.shots-fired-pane-orient-status--ready {
+  color: #c8f7c5;
+}
+
+.shots-fired-pane--winner.shots-fired-pane--champion {
+  background: color-mix(in srgb, var(--pane-color) 55%, #6b7f96);
+  box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.35);
+}
+
+.shots-fired-pane-center-name {
+  margin: 0;
+  font-size: clamp(1.1rem, 3.2vw, 2.25rem);
+  font-weight: 700;
+  text-align: center;
+  padding: 0 0.75rem;
+  line-height: 1.2;
+}
+
+.shots-fired-pane-winner-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.75rem;
+}
+
+.shots-fired-pane-winner-badge {
+  font-size: clamp(0.65rem, 1.4vw, 0.85rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #ff6b4a;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.shots-fired-pane-winner-score {
+  margin: 0;
+  font-size: clamp(0.95rem, 2.4vw, 1.25rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.shots-fired-pane--play {
+  background: transparent;
+}
+
+.shots-fired-pane-play-body {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.25rem;
+  width: max-content;
+  max-width: calc(100% - 16px);
+  text-align: center;
+}
+
+.shots-fired-pane-name {
+  font-weight: 700;
+  font-size: clamp(1.15rem, 3.8vw, 2rem);
+  line-height: 1.15;
+  -webkit-font-smoothing: antialiased;
+}
+
+.shots-fired-pane-score {
+  font-weight: 600;
+  font-size: clamp(0.85rem, 2vw, 1.05rem);
+  font-variant-numeric: tabular-nums;
+}
+
+.shots-fired-orient {
+  position: fixed;
+  inset: 0;
+  background: #6b7f96;
+  z-index: 5;
+}
+
+.shots-fired-orient-center {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  pointer-events: none;
+}
+
+.shots-fired-orient-hint {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+}
+
+.shots-fired-orient-center .coin-rush-rotate-prompt {
+  color: #fff;
+}
+
+.shots-fired-orient-center .coin-rush-rotate-text,
+.shots-fired-orient-center .coin-rush-rotate-sub {
+  color: #fff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+}
+
+.shots-fired-portrait-gate {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.shots-fired-landscape-play {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex: 1;
+}
+
+.shots-fired-crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 4;
+}
+
+.shots-fired-crosshair::before,
+.shots-fired-crosshair::after {
+  content: '';
+  position: absolute;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.55);
+}
+
+.shots-fired-crosshair::before {
+  left: 50%;
+  top: 1px;
+  width: 2px;
+  height: 20px;
+  transform: translateX(-50%);
+}
+
+.shots-fired-crosshair::after {
+  top: 50%;
+  left: 1px;
+  width: 20px;
+  height: 2px;
+  transform: translateY(-50%);
+}
+
+.shots-fired-crosshair-dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 72, 52, 0.95);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.45);
+}
+
+.shots-fired-landscape-play .shots-fired-crosshair {
+  z-index: 3;
+}
+
+.shots-fired-action-stack {
+  position: absolute;
+  left: 70%;
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.shots-fired-action-btn {
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  touch-action: manipulation;
+  user-select: none;
+  display: grid;
+  place-items: center;
+}
+
+.shots-fired-melee-btn {
+  width: clamp(4rem, 16vw, 5.5rem);
+  height: clamp(4rem, 16vw, 5.5rem);
+  font-size: clamp(0.7rem, 2.4vw, 0.85rem);
+  background: linear-gradient(180deg, #6b7f96 0%, #3d4a5c 100%);
+}
+
+.shots-fired-melee-btn:active {
+  transform: scale(0.96);
+}
+
+.shots-fired-fire-btn {
+  width: clamp(5.5rem, 22vw, 7.5rem);
+  height: clamp(5.5rem, 22vw, 7.5rem);
+  font-size: clamp(0.95rem, 3.2vw, 1.2rem);
+  background: linear-gradient(180deg, #ff5a3c 0%, #c62828 100%);
+}
+
+.shots-fired-fire-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.shots-fired-fire-btn:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+.shots-fired-jump-btn {
+  position: absolute;
+  z-index: 6;
+  width: clamp(3.5rem, 13vw, 4.75rem);
+  height: clamp(3.5rem, 13vw, 4.75rem);
+  font-size: clamp(0.7rem, 2.4vw, 0.85rem);
+  background: linear-gradient(180deg, #4caf7d 0%, #2e7d5b 100%);
+  right: calc(
+    max(1rem, env(safe-area-inset-right)) + min(17vw, 70px) - clamp(1.75rem, 6.5vw, 2.375rem)
+  );
+  bottom: calc(max(1rem, env(safe-area-inset-bottom)) + min(34vw, 140px) + 1.4rem);
+}
+
+.shots-fired-jump-btn:active {
+  transform: scale(0.96);
+}

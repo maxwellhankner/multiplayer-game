@@ -1,6 +1,7 @@
 import { GAMES } from '../../shared/games/registry.js';
 import type { GameServerModule } from './types.js';
 import { scribbleTimeServer } from './scribble-time/index.js';
+import { shotsFiredServer } from './shots-fired/index.js';
 import { balloonDropServer } from './balloon-drop/index.js';
 import { coinRushServer } from './coin-rush/index.js';
 import { drunkDriverServer } from './drunk-driver/index.js';
@@ -14,6 +15,7 @@ const placeholderModules: GameServerModule[] = GAMES.filter(
 }));
 
 const MODULES: GameServerModule[] = [
+  shotsFiredServer,
   drunkDriverServer,
   scribbleTimeServer,
   hoeDownDerbyServer,

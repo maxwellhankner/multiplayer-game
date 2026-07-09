@@ -17,6 +17,10 @@ interface ControllerUIProps {
   onReady: () => void;
   onJump: () => void;
   onCoinInput: (input: CoinStickInput) => void;
+  onShotsFiredInput: (input: CoinStickInput) => void;
+  onShotsFiredShoot: () => void;
+  onShotsFiredMelee: () => void;
+  onShotsFiredJump: () => void;
   onBalloonInput: (input: BalloonInput) => void;
   onDrunkInput: (input: DrunkDriverInput) => void;
   onScribblePrompt: (prompt: string) => void;
@@ -44,6 +48,10 @@ export default function ControllerUI({
   onReady,
   onJump,
   onCoinInput,
+  onShotsFiredInput,
+  onShotsFiredShoot,
+  onShotsFiredMelee,
+  onShotsFiredJump,
   onBalloonInput,
   onDrunkInput,
   onScribblePrompt,
@@ -216,6 +224,10 @@ export default function ControllerUI({
           playerId={playerId}
           onJump={onJump}
           onCoinInput={onCoinInput}
+          onShotsFiredInput={onShotsFiredInput}
+          onShotsFiredShoot={onShotsFiredShoot}
+          onShotsFiredMelee={onShotsFiredMelee}
+          onShotsFiredJump={onShotsFiredJump}
           onBalloonInput={onBalloonInput}
           onDrunkInput={onDrunkInput}
           onScribblePrompt={onScribblePrompt}

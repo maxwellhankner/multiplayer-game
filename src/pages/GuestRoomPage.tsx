@@ -242,6 +242,11 @@ export default function GuestRoomPage() {
   const onReady = () => socket.current?.emit('player:ready');
   const onJump = () => socket.current?.emit('player:jump');
   const onCoinInput = (input: CoinStickInput) => socket.current?.emit('player:coin-input', input);
+  const onShotsFiredInput = (input: CoinStickInput) =>
+    socket.current?.emit('player:shots-fired-input', input);
+  const onShotsFiredShoot = () => socket.current?.emit('player:shots-fired-shoot');
+  const onShotsFiredMelee = () => socket.current?.emit('player:shots-fired-melee');
+  const onShotsFiredJump = () => socket.current?.emit('player:shots-fired-jump');
   const onBalloonInput = (input: BalloonInput) => socket.current?.emit('player:balloon-input', input);
   const onDrunkInput = (input: DrunkDriverInput) => socket.current?.emit('player:drunk-input', input);
   const onScribblePrompt = (prompt: string) => socket.current?.emit('player:scribble-prompt', prompt);
@@ -284,6 +289,10 @@ export default function GuestRoomPage() {
         onReady={onReady}
         onJump={onJump}
         onCoinInput={onCoinInput}
+        onShotsFiredInput={onShotsFiredInput}
+        onShotsFiredShoot={onShotsFiredShoot}
+        onShotsFiredMelee={onShotsFiredMelee}
+        onShotsFiredJump={onShotsFiredJump}
         onBalloonInput={onBalloonInput}
         onDrunkInput={onDrunkInput}
         onScribblePrompt={onScribblePrompt}

@@ -1,4 +1,4 @@
-import type { BalloonInput, BalloonState, CoinStickInput, CoinState, DrunkDriverInput, GamePhase, LobbySettings, ObstacleState, PlayerState, RoomState, ScribblePhase, ScribbleStroke, SessionMode } from '../shared/types.js';
+import type { BalloonInput, BalloonState, CoinStickInput, CoinState, DrunkDriverInput, GamePhase, LobbySettings, ObstacleState, PlayerState, RoomState, ScribblePhase, ScribbleStroke, SessionMode, ShotImpactState, ShotTracerState } from '../shared/types.js';
 import { GAME_CONSTANTS, GAMEPLAY, getHorseHitboxBounds, getJumpHeightAtPhase, MAX_PLAYERS, PLAYER_COLORS } from '../shared/constants.js';
 import { getSessionWinPlayerIds } from '../shared/games/session-wins.js';
 import { isBot, allHumansReady } from '../shared/games/bots.js';
@@ -8,6 +8,14 @@ import { isValidRoomCode, normalizeRoomCode, randomRoomCode } from '../shared/ro
 import { getGameServerModule } from './games/registry.js';
 import { initCoinRush, setCoinStickInput, tickCoinRush } from './games/coin-rush/gameplay.js';
 import { clearCoinRushBots } from './games/coin-rush/module.js';
+import {
+  fireShotsFiredShot,
+  initShotsFired,
+  jumpShotsFired,
+  meleeShotsFiredAttack,
+  setShotsFiredInput,
+  tickShotsFired,
+} from './games/shots-fired/gameplay.js';
 import { initBalloonDrop, setBalloonInput, tickBalloonDrop } from './games/balloon-drop/gameplay.js';
 import { clearBalloonDropBots } from './games/balloon-drop/module.js';
 import {
@@ -43,7 +51,7 @@ const DEFAULT_TRACK_WIDTH = 1200;
 const COUNTDOWN_SECONDS = 3;
 
 function gameUsesOrientPhase(gameId: string | null): boolean {
-  return gameId === 'coin-rush' || gameId === 'drunk-driver';
+  return gameId === 'coin-rush' || gameId === 'drunk-driver' || gameId === 'shots-fired';
 }
 
 interface Room {
@@ -57,6 +65,14 @@ interface Room {
   coins: CoinState[];
   balloons: BalloonState[];
   coinInputs: Map<string, CoinStickInput>;
+  shotsFiredInputs: Map<string, CoinStickInput>;
+  shotTracers: ShotTracerState[];
+  shotImpacts: ShotImpactState[];
+  nextTracerId: number;
+  nextImpactId: number;
+  lastFireAt: Map<string, number>;
+  lastMeleeAt: Map<string, number>;
+  jumpVel: Map<string, number>;
   balloonInputs: Map<string, BalloonInput>;
   drunkInputs: Map<string, DrunkDriverInput>;
   scrollX: number;
@@ -94,6 +110,14 @@ function buildEmptyRoom(id: string, sessionMode: SessionMode): Room {
     coins: [],
     balloons: [],
     coinInputs: new Map(),
+    shotsFiredInputs: new Map(),
+    shotTracers: [],
+    shotImpacts: [],
+    nextTracerId: 1,
+    nextImpactId: 1,
+    lastFireAt: new Map(),
+    lastMeleeAt: new Map(),
+    jumpVel: new Map(),
     balloonInputs: new Map(),
     drunkInputs: new Map(),
     scrollX: 0,
@@ -135,8 +159,10 @@ function createPlayer(id: string, name: string, lane: number, color: string): Pl
     score: 0,
     px: 0,
     pz: 0,
+    py: 0,
     yaw: 0,
     pitch: 0,
+    bullets: 0,
   };
 }
 
@@ -287,8 +313,10 @@ export function importDevRoomSnapshots(snapshots: DevRoomSnapshot[]): void {
               score: 0,
               px: 0,
               pz: 0,
+              py: 0,
               yaw: 0,
               pitch: 0,
+              bullets: 0,
             },
           ] as const;
         }),
@@ -297,6 +325,14 @@ export function importDevRoomSnapshots(snapshots: DevRoomSnapshot[]): void {
       coins: [],
       balloons: [],
       coinInputs: new Map(),
+      shotsFiredInputs: new Map(),
+      shotTracers: [],
+      shotImpacts: [],
+      nextTracerId: 1,
+      nextImpactId: 1,
+      lastFireAt: new Map(),
+      lastMeleeAt: new Map(),
+      jumpVel: new Map(),
       balloonInputs: new Map(),
       drunkInputs: new Map(),
       scrollX: 0,
@@ -351,12 +387,17 @@ export function rejoinPlayer(
         score: 0,
         px: 0,
         pz: 0,
+        py: 0,
         yaw: 0,
         pitch: 0,
+        bullets: 0,
       };
 
   room.players.delete(oldPlayerId);
   room.coinInputs.delete(oldPlayerId);
+  room.shotsFiredInputs.delete(oldPlayerId);
+  room.lastFireAt.delete(oldPlayerId);
+  room.lastMeleeAt.delete(oldPlayerId);
   room.balloonInputs.delete(oldPlayerId);
   room.drunkInputs.delete(oldPlayerId);
   room.players.set(newSocketId, player);
@@ -427,6 +468,9 @@ export function removePlayer(room: Room, socketId: string): void {
   if (isBot(socketId)) return;
   room.players.delete(socketId);
   room.coinInputs.delete(socketId);
+  room.shotsFiredInputs.delete(socketId);
+  room.lastFireAt.delete(socketId);
+  room.lastMeleeAt.delete(socketId);
   room.balloonInputs.delete(socketId);
   room.drunkInputs.delete(socketId);
   reindexLanes(room);
@@ -482,6 +526,7 @@ function beginRace(room: Room): void {
 
   room.activeGameId = gameId;
   const isCoinRush = gameId === 'coin-rush';
+  const isShotsFired = gameId === 'shots-fired';
   const isDrunkDriver = gameId === 'drunk-driver';
   const isOrientGame = gameUsesOrientPhase(gameId);
   room.phase = isOrientGame ? 'orient' : 'countdown';
@@ -498,6 +543,9 @@ function beginRace(room: Room): void {
   if (isCoinRush) {
     clearCoinRushBots();
     initCoinRush(room);
+  }
+  if (isShotsFired) {
+    initShotsFired(room);
   }
   if (isDrunkDriver) {
     clearDrunkDriverBots();
@@ -518,7 +566,7 @@ function beginRace(room: Room): void {
   for (const p of room.players.values()) {
     p.ready = false;
     p.landscapeReady = isBot(p.id);
-    if (!isCoinRush && !isBalloonDrop && !isScribbleTime && !isDrunkDriver) {
+    if (!isCoinRush && !isShotsFired && !isBalloonDrop && !isScribbleTime && !isDrunkDriver) {
       p.lives = MAX_LIVES;
       p.eliminated = false;
       p.jumpPhase = 0;
@@ -681,6 +729,27 @@ export function setPlayerCoinInput(room: Room, socketId: string, input: CoinStic
   return setCoinStickInput(room, socketId, input);
 }
 
+export function setPlayerShotsFiredInput(room: Room, socketId: string, input: CoinStickInput): boolean {
+  if (room.activeGameId !== 'shots-fired') return false;
+  if (room.phase !== 'playing' && room.phase !== 'countdown') return false;
+  return setShotsFiredInput(room, socketId, input);
+}
+
+export function triggerShotsFiredShoot(room: Room, socketId: string): boolean {
+  if (room.activeGameId !== 'shots-fired') return false;
+  return fireShotsFiredShot(room, socketId, Date.now());
+}
+
+export function triggerShotsFiredMelee(room: Room, socketId: string): boolean {
+  if (room.activeGameId !== 'shots-fired') return false;
+  return meleeShotsFiredAttack(room, socketId, Date.now());
+}
+
+export function triggerShotsFiredJump(room: Room, socketId: string): boolean {
+  if (room.activeGameId !== 'shots-fired') return false;
+  return jumpShotsFired(room, socketId);
+}
+
 export function setPlayerBalloonInput(room: Room, socketId: string, input: BalloonInput): boolean {
   if (room.activeGameId !== 'balloon-drop') return false;
   if (room.phase !== 'playing' && room.phase !== 'countdown') return false;
@@ -727,6 +796,13 @@ function resetRoomToLobby(room: Room): void {
   room.coins = [];
   room.balloons = [];
   room.coinInputs.clear();
+  room.shotsFiredInputs.clear();
+  room.shotTracers = [];
+  room.shotImpacts = [];
+  room.nextTracerId = 1;
+  room.nextImpactId = 1;
+  room.lastFireAt.clear();
+  room.lastMeleeAt.clear();
   room.balloonInputs.clear();
   room.drunkInputs.clear();
   room.scrollX = 0;
@@ -753,8 +829,10 @@ function resetRoomToLobby(room: Room): void {
     p.score = 0;
     p.px = 0;
     p.pz = 0;
+    p.py = 0;
     p.yaw = 0;
     p.pitch = 0;
+    p.bullets = 0;
     if (isBot(p.id)) p.ready = true;
   }
 }
@@ -782,12 +860,22 @@ function runGameBotTick(room: Room, dt: number): void {
       obstacles: room.obstacles,
       coins: room.coins,
       balloons: room.balloons,
+      players: [...room.players.values()],
     },
     triggerJump: (playerId) => {
       triggerJump(room, playerId);
     },
     setCoinInput: (playerId, input) => {
       setCoinStickInput(room, playerId, input);
+    },
+    setShotsFiredInput: (playerId, input) => {
+      setShotsFiredInput(room, playerId, input);
+    },
+    triggerShotsFiredShoot: (playerId) => {
+      fireShotsFiredShot(room, playerId, Date.now());
+    },
+    triggerShotsFiredMelee: (playerId) => {
+      meleeShotsFiredAttack(room, playerId, Date.now());
     },
     setBalloonInput: (playerId, input) => {
       setBalloonInput(room, playerId, input);
@@ -824,6 +912,12 @@ export function tickRoom(room: Room, dt: number): void {
 
     if (room.activeGameId === 'coin-rush') {
       tickCoinRush(room, dt);
+      runGameBotTick(room, dt);
+      return;
+    }
+
+    if (room.activeGameId === 'shots-fired') {
+      tickShotsFired(room, dt, now);
       runGameBotTick(room, dt);
       return;
     }
@@ -929,6 +1023,8 @@ export function serializeRoom(room: Room): RoomState {
     players: [...room.players.values()].sort((a, b) => a.lane - b.lane),
     obstacles: room.obstacles,
     coins: [...room.coins],
+    shotTracers: [...room.shotTracers],
+    shotImpacts: [...room.shotImpacts],
     balloons: [...room.balloons],
     scrollX: room.scrollX,
     countdown: room.countdown,

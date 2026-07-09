@@ -25,7 +25,10 @@ import {
   setPlayerLandscapeReady,
   setPlayerBalloonInput,
   setPlayerCoinInput,
-  setPlayerDrunkInput,
+  setPlayerShotsFiredInput,
+  triggerShotsFiredShoot,
+  triggerShotsFiredMelee,
+  triggerShotsFiredJump,
   setTrackWidth,
   submitScribbleDrawing,
   submitScribblePick,
@@ -272,6 +275,52 @@ io.on('connection', (socket) => {
       lookY: Number(data.lookY),
     };
     setPlayerCoinInput(room, socket.id, input);
+  });
+
+  socket.on('player:shots-fired-input', (payload: unknown) => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (!payload || typeof payload !== 'object') return;
+    const data = payload as Record<string, unknown>;
+    const input = {
+      moveX: Number(data.moveX),
+      moveY: Number(data.moveY),
+      lookX: Number(data.lookX),
+      lookY: Number(data.lookY),
+    };
+    setPlayerShotsFiredInput(room, socket.id, input);
+  });
+
+  socket.on('player:shots-fired-shoot', () => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (triggerShotsFiredShoot(room, socket.id)) {
+      broadcastRoomState(room);
+    }
+  });
+
+  socket.on('player:shots-fired-jump', () => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (triggerShotsFiredJump(room, socket.id)) {
+      broadcastRoomState(room);
+    }
+  });
+
+  socket.on('player:shots-fired-melee', () => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (triggerShotsFiredMelee(room, socket.id)) {
+      broadcastRoomState(room);
+    }
   });
 
   socket.on('player:balloon-input', (payload: unknown) => {

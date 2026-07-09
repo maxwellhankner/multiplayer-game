@@ -39,6 +39,31 @@ export interface CoinState {
   z: number;
 }
 
+export interface ShotTracerState {
+  id: string;
+  shooterId: string;
+  ox: number;
+  oy: number;
+  oz: number;
+  dx: number;
+  dy: number;
+  dz: number;
+  /** Distance traveled before impact (or max range on miss) */
+  length: number;
+  spawnedAt: number;
+}
+
+export type ShotImpactKind = 'wall' | 'player';
+
+export interface ShotImpactState {
+  id: string;
+  x: number;
+  y: number;
+  z: number;
+  kind: ShotImpactKind;
+  spawnedAt: number;
+}
+
 export interface PlayerState {
   id: string;
   name: string;
@@ -57,11 +82,14 @@ export interface PlayerState {
   wins: number;
   /** Coin Rush — phone held in landscape before countdown */
   landscapeReady: boolean;
-  /** Coin Rush — world position and facing (radians, 0 = +Z) */
+  /** Coin Rush / Shots Fired — world position and facing (radians, 0 = +Z) */
   px: number;
   pz: number;
+  py: number;
   yaw: number;
   pitch: number;
+  /** Shots Fired — bullets remaining in magazine */
+  bullets: number;
 }
 
 export interface ObstacleState {
@@ -102,6 +130,8 @@ export interface RoomState {
   winnerName: string | null;
   gameTime: number;
   coins: CoinState[];
+  shotTracers: ShotTracerState[];
+  shotImpacts: ShotImpactState[];
   balloons: BalloonState[];
   scribblePhase: ScribblePhase | null;
   scribblePrompterId: string | null;
