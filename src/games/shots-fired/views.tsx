@@ -27,7 +27,7 @@ export function ShotsFiredHostView({ state }: GameHostProps) {
       {state.phase === 'countdown' && (
         <GameCountdown
           count={state.countdown > 0 ? state.countdown : 'GO!'}
-          hint="12 bullets · 2 hits to kill · last standing wins"
+          hint="3 hits to kill · last standing wins"
         />
       )}
       {state.phase === 'winner' && <ShotsFiredWinner state={state} />}
@@ -85,7 +85,6 @@ export function ShotsFiredControllerView({
       <ShotsFiredControls
         playerName={me.name}
         playerColor={me.color}
-        bullets={me.bullets ?? 0}
         kills={me.score}
         hitsLeft={me.lives}
         onInput={sendInput}
@@ -112,7 +111,6 @@ export function ShotsFiredControllerView({
       <ShotsFiredControls
         playerName={me.name}
         playerColor={me.color}
-        bullets={me.bullets ?? 0}
         kills={me.score}
         hitsLeft={me.lives}
         onInput={sendInput}

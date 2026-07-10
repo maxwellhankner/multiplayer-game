@@ -90,6 +90,8 @@ export interface PlayerState {
   pitch: number;
   /** Shots Fired — bullets remaining in magazine */
   bullets: number;
+  /** Shots Fired — gameTime when this player last melee'd (for view animation) */
+  lastMeleeAt?: number;
 }
 
 export interface ObstacleState {

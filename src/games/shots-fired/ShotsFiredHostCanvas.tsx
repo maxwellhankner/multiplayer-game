@@ -3,12 +3,15 @@ import * as THREE from 'three';
 import {
   SHOTS_FIRED_ARENA_HALF,
   SHOTS_FIRED_BOXES,
-  SHOTS_FIRED_EYE_FORWARD,
+  SHOTS_FIRED_HEAD_CENTER_Y,
+  SHOTS_FIRED_HEAD_RADIUS,
   SHOTS_FIRED_IMPACT_DURATION_MS,
   SHOTS_FIRED_MAX_RANGE,
-  SHOTS_FIRED_PLAYER_HEIGHT,
+  SHOTS_FIRED_MELEE_SWING_MS,
+  SHOTS_FIRED_TORSO_HEIGHT,
   SHOTS_FIRED_TRACER_DURATION_MS,
 } from '../../../shared/games/shots-fired/constants';
+import { getEyePosition } from '../../../shared/games/shots-fired/kinematics';
 import type { RoomState, ShotImpactKind } from '../../../shared/types';
 import ShotsFiredPaneGrid from './ShotsFiredPaneGrid';
 import { getSplitPanes } from '../coin-rush/splitLayout';
@@ -20,12 +23,9 @@ interface ShotsFiredHostCanvasProps {
 interface PlayerMesh {
   id: string;
   group: THREE.Group;
-  bodyMat: THREE.MeshStandardMaterial;
-  headMat: THREE.MeshStandardMaterial;
-}
-
-interface PistolMesh {
-  group: THREE.Group;
+  torsoMat: THREE.MeshStandardMaterial;
+  skinMat: THREE.MeshStandardMaterial;
+  leftArm: THREE.Group;
 }
 
 interface ImpactSpark {
@@ -91,11 +91,13 @@ export default function ShotsFiredHostCanvas({ state }: ShotsFiredHostCanvasProp
     const boxEdgeMat = new THREE.LineBasicMaterial({ color: 0x1c2430 });
     const boxGeos: THREE.BoxGeometry[] = [];
     const boxEdgeGeos: THREE.EdgesGeometry[] = [];
-    const JUMPABLE_MAX_HEIGHT = 1.5;
     for (const box of SHOTS_FIRED_BOXES) {
       const geo = new THREE.BoxGeometry(box.hw * 2, box.h, box.hd * 2);
       boxGeos.push(geo);
-      const mesh = new THREE.Mesh(geo, box.h <= JUMPABLE_MAX_HEIGHT ? shortBoxMat : tallBoxMat);
+      const mesh = new THREE.Mesh(
+        geo,
+        box.variant === 'pillar' ? tallBoxMat : shortBoxMat,
+      );
       mesh.position.set(box.x, box.h / 2, box.z);
       scene.add(mesh);
       const edgeGeo = new THREE.EdgesGeometry(geo);
@@ -106,36 +108,68 @@ export default function ShotsFiredHostCanvas({ state }: ShotsFiredHostCanvasProp
     }
 
     const playerMeshes = new Map<string, PlayerMesh>();
-    const pistols = new Map<number, PistolMesh>();
     const tracerLines: THREE.Line[] = [];
     const impactSparks = new Map<string, ImpactSpark>();
     const cameras: THREE.PerspectiveCamera[] = [];
 
-    const bodyGeo = new THREE.CapsuleGeometry(0.32, 0.85, 4, 12);
-    const headGeo = new THREE.SphereGeometry(0.26, 12, 12);
+    const SKIN_COLOR = 0xf3b673;
+    const GUN_COLOR = 0x555555;
 
-    const pistolBodyGeo = new THREE.BoxGeometry(0.09, 0.1, 0.32);
-    const pistolGripGeo = new THREE.BoxGeometry(0.07, 0.16, 0.1);
-    const pistolBarrelGeo = new THREE.BoxGeometry(0.05, 0.05, 0.14);
-    const pistolHandGeo = new THREE.BoxGeometry(0.1, 0.08, 0.14);
-    const pistolMetalMat = new THREE.MeshStandardMaterial({
-      color: 0x3d3d3d,
-      metalness: 0.75,
-      roughness: 0.28,
-      fog: false,
+    const torsoGeo = new THREE.BoxGeometry(0.52, SHOTS_FIRED_TORSO_HEIGHT, 0.3);
+    const headGeo = new THREE.SphereGeometry(SHOTS_FIRED_HEAD_RADIUS, 14, 14);
+    const worldShootArmGeo = new THREE.CapsuleGeometry(0.09, 0.34, 4, 8);
+    const worldTorsoH = SHOTS_FIRED_TORSO_HEIGHT;
+    const worldTorsoY = worldTorsoH / 2;
+    const worldHeadY = SHOTS_FIRED_HEAD_CENTER_Y;
+    const worldUpperY = worldTorsoY + worldTorsoH * 0.22;
+    const worldShoulderZ = -0.1;
+    const worldArmHalf = 0.26;
+    const worldGunBarrelGeo = new THREE.BoxGeometry(0.05, 0.05, 0.14);
+    const worldGunGripGeo = new THREE.BoxGeometry(0.04, 0.09, 0.04);
+
+    const skinMat = new THREE.MeshStandardMaterial({
+      color: SKIN_COLOR,
+      roughness: 0.95,
+      metalness: 0,
     });
-    const pistolGripMat = new THREE.MeshStandardMaterial({
-      color: 0x4a3020,
-      metalness: 0.1,
-      roughness: 0.9,
-      fog: false,
-    });
-    const pistolHandMat = new THREE.MeshStandardMaterial({
-      color: 0xc68642,
-      metalness: 0.05,
+    const gunMat = new THREE.MeshStandardMaterial({
+      color: GUN_COLOR,
       roughness: 0.85,
-      fog: false,
+      metalness: 0.05,
     });
+
+    const addWorldGun = (rightArm: THREE.Object3D, tipZ: number) => {
+      const gun = new THREE.Group();
+      gun.position.set(0.02, -0.03, tipZ);
+      const barrel = new THREE.Mesh(worldGunBarrelGeo, gunMat);
+      barrel.position.set(0, 0, -0.07);
+      const grip = new THREE.Mesh(worldGunGripGeo, gunMat);
+      grip.position.set(0, -0.05, 0.03);
+      gun.add(barrel, grip);
+      rightArm.add(gun);
+    };
+
+    const addWorldArm = (group: THREE.Group, shoulderX: number, skin: THREE.Material, withGun: boolean) => {
+      const arm = new THREE.Group();
+      arm.position.set(shoulderX, worldUpperY, worldShoulderZ);
+      const forearm = new THREE.Mesh(worldShootArmGeo, skin);
+      forearm.rotation.x = -Math.PI / 2;
+      const armCenterZ = -0.04;
+      forearm.position.set(0, 0, armCenterZ);
+      arm.add(forearm);
+      if (withGun) {
+        addWorldGun(arm, armCenterZ - worldArmHalf);
+      }
+      group.add(arm);
+      return arm;
+    };
+
+    const getMeleeSwing = (gameTime: number, lastMeleeAt: number): number => {
+      if (!lastMeleeAt) return 0;
+      const elapsed = gameTime - lastMeleeAt;
+      if (elapsed < 0 || elapsed > SHOTS_FIRED_MELEE_SWING_MS) return 0;
+      return Math.sin((elapsed / SHOTS_FIRED_MELEE_SWING_MS) * Math.PI);
+    };
 
     let width = container.clientWidth;
     let height = container.clientHeight;
@@ -153,36 +187,13 @@ export default function ShotsFiredHostCanvas({ state }: ShotsFiredHostCanvasProp
     const clock = new THREE.Clock();
     const seenTracers = new Set<string>();
 
-    const createPistol = (): PistolMesh => {
-      const group = new THREE.Group();
-      const slide = new THREE.Mesh(pistolBodyGeo, pistolMetalMat);
-      const grip = new THREE.Mesh(pistolGripGeo, pistolGripMat);
-      const barrel = new THREE.Mesh(pistolBarrelGeo, pistolMetalMat);
-      const hand = new THREE.Mesh(pistolHandGeo, pistolHandMat);
-      barrel.position.set(0, 0.02, 0.22);
-      grip.position.set(0, -0.12, -0.02);
-      grip.rotation.x = 0.25;
-      hand.position.set(0, -0.18, 0.04);
-      group.add(slide, barrel, grip, hand);
-      group.scale.setScalar(2.5);
-      group.position.set(0.34, -0.26, -0.48);
-      group.rotation.set(-0.06, 0.1, 0.03);
-      group.traverse((obj) => {
-        if (obj instanceof THREE.Mesh) {
-          obj.layers.set(0);
-          obj.renderOrder = 999;
-        }
-      });
-      return { group };
-    };
-
-    const syncPlayers = (players: RoomState['players']) => {
+    const syncPlayers = (players: RoomState['players'], gameTime: number) => {
       const ids = new Set(players.map((p) => p.id));
       for (const [id, entry] of playerMeshes) {
         if (!ids.has(id)) {
           scene.remove(entry.group);
-          entry.bodyMat.dispose();
-          entry.headMat.dispose();
+          entry.torsoMat.dispose();
+          entry.skinMat.dispose();
           playerMeshes.delete(id);
         }
       }
@@ -192,33 +203,39 @@ export default function ShotsFiredHostCanvas({ state }: ShotsFiredHostCanvasProp
         let entry = playerMeshes.get(player.id);
         if (!entry) {
           const group = new THREE.Group();
-          const bodyMat = new THREE.MeshStandardMaterial({
+          const torsoMat = new THREE.MeshStandardMaterial({
             color: player.color,
-            roughness: 0.72,
-            metalness: 0.05,
+            roughness: 0.95,
+            metalness: 0,
             transparent: true,
             opacity: 1,
           });
-          const headMat = bodyMat.clone();
-          const body = new THREE.Mesh(bodyGeo, bodyMat);
-          body.position.y = 0.55;
-          const head = new THREE.Mesh(headGeo, headMat);
-          head.position.y = 1.22;
-          group.add(body, head);
+          const playerSkinMat = skinMat.clone();
+          const torso = new THREE.Mesh(torsoGeo, torsoMat);
+          torso.position.y = worldTorsoY;
+          const head = new THREE.Mesh(headGeo, playerSkinMat);
+          head.position.y = worldHeadY;
+          const leftArm = addWorldArm(group, -0.28, playerSkinMat, false);
+          addWorldArm(group, 0.28, playerSkinMat, true);
+          group.add(torso, head);
           scene.add(group);
-          entry = { id: player.id, group, bodyMat, headMat };
+          entry = { id: player.id, group, torsoMat, skinMat: playerSkinMat, leftArm };
           playerMeshes.set(player.id, entry);
         } else {
-          entry.bodyMat.color.set(player.color);
-          entry.headMat.color.set(player.color);
+          entry.torsoMat.color.set(player.color);
         }
 
         entry.group.position.set(player.px, player.py, player.pz);
         entry.group.rotation.y = Math.PI - player.yaw;
 
+        const swing = getMeleeSwing(gameTime, player.lastMeleeAt ?? 0);
+        entry.leftArm.rotation.set(0, -swing * 1.05, swing * 0.12);
+
         const opacity = player.eliminated ? 0.38 : 1;
-        entry.bodyMat.opacity = opacity;
-        entry.headMat.opacity = opacity;
+        entry.torsoMat.transparent = opacity < 1;
+        entry.torsoMat.opacity = opacity;
+        entry.skinMat.transparent = opacity < 1;
+        entry.skinMat.opacity = opacity;
 
         const layer = index + 1;
         entry.group.traverse((obj) => {
@@ -365,13 +382,11 @@ export default function ShotsFiredHostCanvas({ state }: ShotsFiredHostCanvasProp
 
       while (cameras.length < players.length) {
         const cam = new THREE.PerspectiveCamera(70, 1, 0.1, 80);
+        scene.add(cam);
         cameras.push(cam);
-        const pistol = createPistol();
-        cam.add(pistol.group);
-        pistols.set(cameras.length - 1, pistol);
       }
 
-      syncPlayers(players);
+      syncPlayers(players, room.gameTime);
       syncTracers(room.shotTracers ?? [], room.gameTime);
       syncImpacts(room.shotImpacts ?? [], room.gameTime);
 
@@ -390,24 +405,14 @@ export default function ShotsFiredHostCanvas({ state }: ShotsFiredHostCanvasProp
 
         const player = players[i];
         const cam = cameras[i];
-        const pistol = pistols.get(i);
-        if (pistol) {
-          const showGun =
-            !player.eliminated &&
-            (room.phase === 'playing' || room.phase === 'countdown');
-          pistol.group.visible = showGun;
-        }
 
         const px = player.px;
         const pz = player.pz;
         const yaw = player.yaw;
         const pitch = player.pitch ?? 0;
 
-        cam.position.set(
-          px + Math.sin(yaw) * SHOTS_FIRED_EYE_FORWARD,
-          SHOTS_FIRED_PLAYER_HEIGHT + (player.py ?? 0),
-          pz + Math.cos(yaw) * SHOTS_FIRED_EYE_FORWARD,
-        );
+        const eye = getEyePosition(px, pz, yaw, player.py ?? 0);
+        cam.position.set(eye.x, eye.y, eye.z);
         cam.rotation.order = 'YXZ';
         cam.rotation.y = Math.PI - yaw;
         cam.rotation.x = -pitch;
@@ -452,22 +457,21 @@ export default function ShotsFiredHostCanvas({ state }: ShotsFiredHostCanvasProp
       impactSparks.clear();
       for (const entry of playerMeshes.values()) {
         scene.remove(entry.group);
-        entry.bodyMat.dispose();
-        entry.headMat.dispose();
+        entry.torsoMat.dispose();
+        entry.skinMat.dispose();
       }
       playerMeshes.clear();
       for (const cam of cameras) {
         cam.removeFromParent();
       }
-      bodyGeo.dispose();
+      cameras.length = 0;
+      torsoGeo.dispose();
       headGeo.dispose();
-      pistolBodyGeo.dispose();
-      pistolGripGeo.dispose();
-      pistolBarrelGeo.dispose();
-      pistolHandGeo.dispose();
-      pistolMetalMat.dispose();
-      pistolGripMat.dispose();
-      pistolHandMat.dispose();
+      worldShootArmGeo.dispose();
+      worldGunBarrelGeo.dispose();
+      worldGunGripGeo.dispose();
+      skinMat.dispose();
+      gunMat.dispose();
       wallMat.dispose();
       shortBoxMat.dispose();
       tallBoxMat.dispose();

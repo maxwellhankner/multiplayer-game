@@ -4,23 +4,32 @@ export {
   COIN_RUSH_LOOK_SPEED as SHOTS_FIRED_LOOK_SPEED,
   COIN_RUSH_PITCH_SPEED as SHOTS_FIRED_PITCH_SPEED,
   COIN_RUSH_MAX_PITCH as SHOTS_FIRED_MAX_PITCH,
-  COIN_RUSH_PLAYER_HEIGHT as SHOTS_FIRED_PLAYER_HEIGHT,
-  COIN_RUSH_EYE_FORWARD as SHOTS_FIRED_EYE_FORWARD,
   COIN_RUSH_STICK_DEADZONE as SHOTS_FIRED_STICK_DEADZONE,
 } from '../coin-rush/constants.js';
 
-/** Pistol magazine size per player */
-export const SHOTS_FIRED_BULLETS = 12;
+/** World avatar torso height (feet at y = 0). */
+export const SHOTS_FIRED_TORSO_HEIGHT = 1.0;
 
-/** Hits before elimination (2 shots = dead) */
-export const SHOTS_FIRED_MAX_HITS = 2;
+/** Head sphere radius — matches ShotsFiredHostCanvas. */
+export const SHOTS_FIRED_HEAD_RADIUS = 0.27;
+
+/** Head sphere center Y from feet. */
+export const SHOTS_FIRED_HEAD_CENTER_Y =
+  SHOTS_FIRED_TORSO_HEIGHT / 2 + SHOTS_FIRED_TORSO_HEIGHT / 2 + SHOTS_FIRED_HEAD_RADIUS;
+
+/** Camera Y — center of head; forward offset — front of head sphere (nose). */
+export const SHOTS_FIRED_CAMERA_Y = SHOTS_FIRED_HEAD_CENTER_Y;
+export const SHOTS_FIRED_CAMERA_FORWARD = SHOTS_FIRED_HEAD_RADIUS;
+
+/** Hits before elimination */
+export const SHOTS_FIRED_MAX_HITS = 3;
 
 /** Body hit capsule radius for raycast */
 export const SHOTS_FIRED_HIT_RADIUS = 0.45;
 
 /**
- * Vertical hit capsule spans knee height up to head level so a level shot
- * (eye height 1.6, e.g. bots that never pitch) still connects with the head cap.
+ * Vertical hit capsule spans knee height up to head level so level shots
+ * still connect with the head cap.
  */
 export const SHOTS_FIRED_HITBOX_BOTTOM_Y = 0.15;
 export const SHOTS_FIRED_HITBOX_TOP_Y = 1.45;
@@ -40,6 +49,9 @@ export const SHOTS_FIRED_MELEE_CONE = 0.75;
 /** Minimum ms between melee swings */
 export const SHOTS_FIRED_MELEE_COOLDOWN_MS = 550;
 
+/** Melee punch animation length on host/controller view */
+export const SHOTS_FIRED_MELEE_SWING_MS = 300;
+
 /** Brief invulnerability after taking a hit */
 export const SHOTS_FIRED_HIT_INVULN_MS = 350;
 
@@ -58,8 +70,8 @@ export const SHOTS_FIRED_DEATH_FLOAT_SPEED = 1.4;
 /** Max float height before stopping */
 export const SHOTS_FIRED_DEATH_FLOAT_MAX = 14;
 
-/** Initial upward velocity on jump (units per second) */
-export const SHOTS_FIRED_JUMP_SPEED = 7.8;
+/** Initial upward velocity on jump (units per second) — apex ~2.75, enough for 2.6 pillars */
+export const SHOTS_FIRED_JUMP_SPEED = 10.5;
 
 /** Downward acceleration applied while airborne (units per second^2) */
 export const SHOTS_FIRED_GRAVITY = 20;
@@ -74,20 +86,21 @@ export interface ShotsFiredBox {
   hw: number;
   hd: number;
   h: number;
+  /** Visual style only — gameplay height comes from h */
+  variant?: 'pillar' | 'crate';
 }
 
 /**
- * Static box layout. Short crates (h ~1.1) can be jumped on top of
- * (jump apex ≈ 1.5); tall pillars (h 2.6) cannot. Positions avoid the
- * player spawn ring (radius ~4–6) and the arena center.
+ * Static box layout. Crates (h 1.1) and pillars (h 2.6) are both jumpable platforms.
+ * Jump apex ≈ 2.75. Positions avoid the player spawn ring (radius ~4–6) and center.
  */
 export const SHOTS_FIRED_BOXES: readonly ShotsFiredBox[] = [
-  { x: 0, z: 9.5, hw: 1.1, hd: 1.1, h: 2.6 },
-  { x: 0, z: -9.5, hw: 1.1, hd: 1.1, h: 2.6 },
-  { x: 9.5, z: 0, hw: 1.1, hd: 1.1, h: 2.6 },
-  { x: -9.5, z: 0, hw: 1.1, hd: 1.1, h: 2.6 },
-  { x: 6, z: 6, hw: 1.2, hd: 1.2, h: 1.1 },
-  { x: -6, z: 6, hw: 1.2, hd: 1.2, h: 1.1 },
-  { x: 6, z: -6, hw: 1.2, hd: 1.2, h: 1.1 },
-  { x: -6, z: -6, hw: 1.2, hd: 1.2, h: 1.1 },
+  { x: 0, z: 9.5, hw: 1.65, hd: 1.65, h: 2.6, variant: 'pillar' },
+  { x: 0, z: -9.5, hw: 1.65, hd: 1.65, h: 2.6, variant: 'pillar' },
+  { x: 9.5, z: 0, hw: 1.65, hd: 1.65, h: 2.6, variant: 'pillar' },
+  { x: -9.5, z: 0, hw: 1.65, hd: 1.65, h: 2.6, variant: 'pillar' },
+  { x: 6, z: 6, hw: 1.85, hd: 1.85, h: 1.1, variant: 'crate' },
+  { x: -6, z: 6, hw: 1.85, hd: 1.85, h: 1.1, variant: 'crate' },
+  { x: 6, z: -6, hw: 1.85, hd: 1.85, h: 1.1, variant: 'crate' },
+  { x: -6, z: -6, hw: 1.85, hd: 1.85, h: 1.1, variant: 'crate' },
 ];

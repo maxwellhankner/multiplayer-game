@@ -2,12 +2,11 @@ import { useEffect, useRef } from 'react';
 import type { CoinStickInput } from '../../../shared/types';
 import MobileControllerCountdown from '../../components/mobile/MobileControllerCountdown';
 import VirtualJoystick from '../coin-rush/VirtualJoystick';
-import ShotsFiredCrosshair from './ShotsFiredCrosshair';
+import ShotsFiredHealthBar from './ShotsFiredHealthBar';
 
 interface ShotsFiredControlsProps {
   playerName: string;
   playerColor: string;
-  bullets: number;
   kills: number;
   hitsLeft: number;
   onInput: (input: CoinStickInput) => void;
@@ -24,7 +23,6 @@ const ZERO: CoinStickInput = { moveX: 0, moveY: 0, lookX: 0, lookY: 0 };
 export default function ShotsFiredControls({
   playerName,
   playerColor,
-  bullets,
   kills,
   hitsLeft,
   onInput,
@@ -65,27 +63,13 @@ export default function ShotsFiredControls({
           <p>{waitingHint}</p>
         </div>
       )}
-      <div className="controller-game-hud">
-        <span className="game-player-name" style={{ color: playerColor }}>{playerName}</span>
-        <span className="controller-game-hud-muted">
-          {bullets} bullets · {hitsLeft} hits left · {kills} kill{kills === 1 ? '' : 's'}
-        </span>
+      <div className="shots-fired-controller-top-hud">
+        <span className="shots-fired-controller-name">{playerName}</span>
+        <ShotsFiredHealthBar lives={hitsLeft} className="shots-fired-health-bar--controller" />
+        <span className="shots-fired-kills-line">Kills: {kills}</span>
       </div>
-      {!waitingHint && <ShotsFiredCrosshair />}
-      <VirtualJoystick label="Move" className="controller-joystick--left" onChange={setMove} />
-      <VirtualJoystick label="Look" className="controller-joystick--right" onChange={setLook} />
-      <button
-        type="button"
-        className="shots-fired-action-btn shots-fired-jump-btn"
-        onPointerDown={(e) => {
-          e.preventDefault();
-          onJump();
-        }}
-        aria-label="Jump"
-      >
-        JUMP
-      </button>
-      <div className="shots-fired-action-stack">
+      <VirtualJoystick label="Move" className="shots-fired-move-joystick" onChange={setMove} />
+      <div className="shots-fired-action-grid">
         <button
           type="button"
           className="shots-fired-action-btn shots-fired-melee-btn"
@@ -99,8 +83,19 @@ export default function ShotsFiredControls({
         </button>
         <button
           type="button"
+          className="shots-fired-action-btn shots-fired-jump-btn"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            onJump();
+          }}
+          aria-label="Jump"
+        >
+          JUMP
+        </button>
+        <button
+          type="button"
           className="shots-fired-action-btn shots-fired-fire-btn"
-          disabled={bullets <= 0}
+          style={{ backgroundColor: playerColor }}
           onPointerDown={(e) => {
             e.preventDefault();
             onShoot();
@@ -109,6 +104,7 @@ export default function ShotsFiredControls({
         >
           FIRE
         </button>
+        <VirtualJoystick label="Look" className="shots-fired-look-joystick" onChange={setLook} />
       </div>
     </div>
   );

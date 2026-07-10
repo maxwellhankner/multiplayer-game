@@ -2,7 +2,6 @@ import type { CoinStickInput, PlayerState, ShotImpactKind, ShotImpactState, Shot
 import {
   SHOTS_FIRED_ARENA_HALF,
   SHOTS_FIRED_BOXES,
-  SHOTS_FIRED_BULLETS,
   SHOTS_FIRED_DEATH_FLOAT_MAX,
   SHOTS_FIRED_DEATH_FLOAT_SPEED,
   SHOTS_FIRED_FIRE_COOLDOWN_MS,
@@ -382,7 +381,6 @@ export function initShotsFired(room: ShotsFiredRoom): void {
     player.pitch = 0;
     player.score = 0;
     player.lives = SHOTS_FIRED_MAX_HITS;
-    player.bullets = SHOTS_FIRED_BULLETS;
     player.eliminated = false;
     player.invulnUntil = 0;
     room.shotsFiredInputs.set(player.id, { ...ZERO_INPUT });
@@ -493,16 +491,14 @@ export function fireShotsFiredShot(room: ShotsFiredRoom, playerId: string, now: 
   if (room.phase !== 'playing') return false;
 
   const shooter = room.players.get(playerId);
-  if (!shooter || shooter.eliminated || shooter.bullets <= 0) return false;
+  if (!shooter || shooter.eliminated) return false;
 
   const lastFire = room.lastFireAt.get(playerId) ?? 0;
   if (room.gameTime - lastFire < SHOTS_FIRED_FIRE_COOLDOWN_MS) return false;
 
-  shooter.bullets -= 1;
   room.lastFireAt.set(playerId, room.gameTime);
 
-  const eye = getEyePosition(shooter.px, shooter.pz, shooter.yaw);
-  eye.y += shooter.py;
+  const eye = getEyePosition(shooter.px, shooter.pz, shooter.yaw, shooter.py);
   const dir = getLookDirection(shooter.yaw, shooter.pitch);
 
   const hit = findShotHit(room, shooter, eye, dir, now);

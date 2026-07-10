@@ -1,18 +1,19 @@
 import {
-  SHOTS_FIRED_EYE_FORWARD,
-  SHOTS_FIRED_PLAYER_HEIGHT,
+  SHOTS_FIRED_CAMERA_FORWARD,
+  SHOTS_FIRED_CAMERA_Y,
 } from './constants.js';
 
-/** Eye position — matches ShotsFiredHostCanvas camera placement */
+/** Eye position — front center of the head sphere (nose), matches host camera. */
 export function getEyePosition(
   px: number,
   pz: number,
   yaw: number,
+  py = 0,
 ): { x: number; y: number; z: number } {
   return {
-    x: px + Math.sin(yaw) * SHOTS_FIRED_EYE_FORWARD,
-    y: SHOTS_FIRED_PLAYER_HEIGHT,
-    z: pz + Math.cos(yaw) * SHOTS_FIRED_EYE_FORWARD,
+    x: px + Math.sin(yaw) * SHOTS_FIRED_CAMERA_FORWARD,
+    y: SHOTS_FIRED_CAMERA_Y + py,
+    z: pz + Math.cos(yaw) * SHOTS_FIRED_CAMERA_FORWARD,
   };
 }
 

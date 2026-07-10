@@ -16,7 +16,7 @@ function tickShotsFiredBots(bots: PlayerState[], ctx: BotTickContext, dt: number
   if (ctx.room.phase !== 'playing' || ctx.room.activeGameId !== 'shots-fired') return;
 
   for (const bot of bots) {
-    if (bot.eliminated || bot.bullets <= 0) {
+    if (bot.eliminated) {
       ctx.setShotsFiredInput?.(bot.id, { moveX: 0, moveY: 0, lookX: 0, lookY: 0 });
       continue;
     }

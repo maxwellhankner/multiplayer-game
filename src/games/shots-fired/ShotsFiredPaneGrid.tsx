@@ -1,6 +1,7 @@
 import { getSplitPanes } from '../coin-rush/splitLayout';
 import type { RoomState } from '../../../shared/types';
 import ShotsFiredCrosshair from './ShotsFiredCrosshair';
+import ShotsFiredHealthBar from './ShotsFiredHealthBar';
 
 export type ShotsFiredPaneMode = 'play' | 'orient' | 'countdown' | 'winner';
 
@@ -41,10 +42,16 @@ export default function ShotsFiredPaneGrid({ players, mode, winnerId = null }: S
                 <span className="shots-fired-pane-name game-player-name pane-player-color">
                   {player.name}
                 </span>
-                <span className="shots-fired-pane-score pane-player-color">
-                  {(player.bullets ?? 0)} bullets · {hitsLeft} hits left
-                  {player.eliminated ? ' · DEAD' : ''}
+                <ShotsFiredHealthBar
+                  lives={hitsLeft}
+                  className="shots-fired-health-bar--host"
+                />
+                <span className="shots-fired-kills-line">
+                  {player.score} kill{player.score === 1 ? '' : 's'}
                 </span>
+                {player.eliminated && (
+                  <span className="shots-fired-pane-dead pane-player-color">DEAD</span>
+                )}
               </div>
             )}
             {mode === 'orient' && (

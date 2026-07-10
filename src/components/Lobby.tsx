@@ -91,7 +91,7 @@ export default function Lobby({
           <p className="lobby-session-mode">{getSessionModeLabel(state.sessionMode)}</p>
 
           <div className="qr-panel">
-            <QRCodeSVG value={guestUrl} size={180} level="M" includeMargin />
+            <QRCodeSVG value={guestUrl} level="M" />
           </div>
 
           <button

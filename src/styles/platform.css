@@ -584,6 +584,7 @@
 
 .lobby-panel--lobby .qr-panel {
   margin: 1.25rem 0;
+  width: 100%;
 }
 
 .lobby-url-btn {
@@ -652,15 +653,20 @@
 
 .qr-panel {
   text-align: center;
+  box-sizing: border-box;
 }
 
 .qr-panel canvas,
 .qr-panel svg {
   display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
   margin: 0 auto;
   background: #fff;
-  padding: 0.5rem;
-  border-radius: 8px;
+  padding: 0.9rem;
+  border-radius: 6px;
+  box-sizing: border-box;
 }
 
 .room-code {

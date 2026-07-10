@@ -1020,7 +1020,12 @@ export function serializeRoom(room: Room): RoomState {
       gamePool: [...room.lobbySettings.gamePool],
     },
     activeGameId: room.activeGameId,
-    players: [...room.players.values()].sort((a, b) => a.lane - b.lane),
+    players: [...room.players.values()]
+      .sort((a, b) => a.lane - b.lane)
+      .map((p) => ({
+        ...p,
+        lastMeleeAt: room.lastMeleeAt.get(p.id) ?? 0,
+      })),
     obstacles: room.obstacles,
     coins: [...room.coins],
     shotTracers: [...room.shotTracers],
