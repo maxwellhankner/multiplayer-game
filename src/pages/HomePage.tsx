@@ -51,37 +51,38 @@ export default function HomePage() {
         <div className="home-inner">
           <header className="home-hero">
             <h1 className="home-title">{PLATFORM_NAME}</h1>
-            <p className="home-tagline">Host a lobby on this screen, or join with a room code.</p>
           </header>
 
-          <form className="home-join" onSubmit={handleJoin}>
-            <input
-              id="room-code"
-              type="text"
-              className="text-input text-input--code"
-              placeholder="ROOM CODE"
-              aria-label="Room code"
-              value={roomInput}
-              maxLength={ROOM_CODE_LENGTH}
-              autoComplete="off"
-              autoCapitalize="characters"
-              spellCheck={false}
-              onChange={(e) =>
-                setRoomInput(normalizeRoomCode(e.target.value).slice(0, ROOM_CODE_LENGTH))
-              }
-            />
-            <button
-              type="submit"
-              className={`btn ${canJoin ? 'btn-primary' : 'btn-secondary'}`}
-              disabled={!canJoin}
-            >
-              Join
-            </button>
-          </form>
+          <section className="home-section" aria-labelledby="join-heading">
+            <h2 id="join-heading" className="home-section-title">Join an Existing Game</h2>
+            <form className="home-join" onSubmit={handleJoin}>
+              <input
+                id="room-code"
+                type="text"
+                className="text-input text-input--code"
+                placeholder="ROOM CODE"
+                aria-label="Room code"
+                value={roomInput}
+                maxLength={ROOM_CODE_LENGTH}
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+                onChange={(e) =>
+                  setRoomInput(normalizeRoomCode(e.target.value).slice(0, ROOM_CODE_LENGTH))
+                }
+              />
+              <button
+                type="submit"
+                className={`btn ${canJoin ? 'btn-primary' : 'btn-secondary'}`}
+                disabled={!canJoin}
+              >
+                Join
+              </button>
+            </form>
+          </section>
 
-          <div className="home-divider" aria-hidden="true" />
-
-          <div className="home-host">
+          <section className="home-section home-host" aria-labelledby="host-heading">
+            <h2 id="host-heading" className="home-section-title">Host a New Lobby</h2>
             <SessionModePicker
               selected={selectedMode}
               onSelect={setSelectedMode}
@@ -96,7 +97,7 @@ export default function HomePage() {
               {creating ? 'Starting…' : 'Start'}
             </button>
             {createError && <p className="error home-error">{createError}</p>}
-          </div>
+          </section>
         </div>
       </div>
     </div>

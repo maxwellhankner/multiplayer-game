@@ -1,4 +1,4 @@
-export type SessionMode = 'pc-host' | 'mobile-only' | 'personal-computers';
+export type SessionMode = 'pc-host' | 'local-controllers' | 'mobile-only' | 'personal-computers';
 
 export interface SessionModeInfo {
   id: SessionMode;
@@ -8,6 +8,12 @@ export interface SessionModeInfo {
 
 /** Order matters — shown top to bottom on host setup */
 export const SESSION_MODES: SessionModeInfo[] = [
+  {
+    id: 'local-controllers',
+    title: 'PC Host with Controllers',
+    description:
+      'This computer shows the game. Players use gamepads — PlayStation, Xbox, or other controllers — or one keyboard and mouse.',
+  },
   {
     id: 'pc-host',
     title: 'PC Host with Mobile Devices',
@@ -41,8 +47,17 @@ export function normalizeSessionMode(value: string | null | undefined): SessionM
   if (!value) return null;
   if (value === 'living-room') return 'pc-host';
   if (value === 'remote') return 'personal-computers';
-  if (value === 'pc-host' || value === 'mobile-only' || value === 'personal-computers') {
+  if (
+    value === 'pc-host' ||
+    value === 'local-controllers' ||
+    value === 'mobile-only' ||
+    value === 'personal-computers'
+  ) {
     return value;
   }
   return null;
+}
+
+export function isSessionMode(value: unknown): value is SessionMode {
+  return normalizeSessionMode(typeof value === 'string' ? value : null) === value;
 }

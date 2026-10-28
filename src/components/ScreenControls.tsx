@@ -6,12 +6,17 @@ interface ScreenControlsProps {
   onHome?: () => void;
   /** Go back one step (e.g. setup → home) */
   onBack?: () => void;
+  /** Open local controller setup during a match */
+  onPlayers?: () => void;
+  playersOpen?: boolean;
   showFullscreen?: boolean;
 }
 
 export default function ScreenControls({
   onHome,
   onBack,
+  onPlayers,
+  playersOpen = false,
   showFullscreen = true,
 }: ScreenControlsProps) {
   const isMobile = useIsMobileDevice();
@@ -20,7 +25,7 @@ export default function ScreenControls({
 
   if (isMobile) return null;
 
-  if (!onHome && !onBack && !canFullscreen) return null;
+  if (!onHome && !onBack && !onPlayers && !canFullscreen) return null;
 
   return (
     <nav className="screen-controls" aria-label="Screen menu">
@@ -44,6 +49,18 @@ export default function ScreenControls({
           title="Home"
         >
           ⌂
+        </button>
+      )}
+      {onPlayers && (
+        <button
+          type="button"
+          className="screen-btn screen-btn-text"
+          onClick={onPlayers}
+          aria-pressed={playersOpen}
+          aria-label="Player settings"
+          title="Player settings"
+        >
+          Players
         </button>
       )}
       {canFullscreen && (

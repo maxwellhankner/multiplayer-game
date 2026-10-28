@@ -47,7 +47,7 @@ import {
 import { getLocalIP, getLocalIPs } from './network.js';
 import { guestRoomUrl } from '../shared/routes.js';
 import { MAX_PLAYERS } from '../shared/constants.js';
-import type { LobbySettings, SessionMode } from '../shared/platform.js';
+import { normalizeSessionMode, type LobbySettings, type SessionMode } from '../shared/platform.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 3001;
@@ -105,7 +105,11 @@ io.on('connection', (socket) => {
       data: { sessionMode?: SessionMode },
       cb: (state: ReturnType<typeof serializeRoom> | { error: string }) => void,
     ) => {
-      const sessionMode = data?.sessionMode ?? 'pc-host';
+      const sessionMode = data?.sessionMode == null ? 'pc-host' : normalizeSessionMode(data.sessionMode);
+      if (!sessionMode) {
+        cb({ error: 'Unknown room type' });
+        return;
+      }
       const room = createRoom(sessionMode);
       room.hostOnline = true;
       socketRoom.set(socket.id, room.id);
@@ -178,7 +182,8 @@ io.on('connection', (socket) => {
         cb({ ok: false, error: 'Room not found' });
         return;
       }
-      if (room.phase !== 'lobby' && room.phase !== 'winner') {
+      const localRoom = room.sessionMode === 'local-controllers';
+      if (room.phase !== 'lobby' && room.phase !== 'winner' && !localRoom) {
         cb({ ok: false, error: 'Game already in progress' });
         return;
       }
@@ -284,11 +289,17 @@ io.on('connection', (socket) => {
     if (!room) return;
     if (!payload || typeof payload !== 'object') return;
     const data = payload as Record<string, unknown>;
+    const finite = (value: unknown) => {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : 0;
+    };
     const input = {
-      moveX: Number(data.moveX),
-      moveY: Number(data.moveY),
-      lookX: Number(data.lookX),
-      lookY: Number(data.lookY),
+      moveX: finite(data.moveX),
+      moveY: finite(data.moveY),
+      lookX: finite(data.lookX),
+      lookY: finite(data.lookY),
+      lookDX: finite(data.lookDX),
+      lookDY: finite(data.lookDY),
     };
     setPlayerShotsFiredInput(room, socket.id, input);
   });

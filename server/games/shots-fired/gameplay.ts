@@ -407,11 +407,15 @@ function applyStickInput(player: PlayerState, input: CoinStickInput, dtMs: numbe
   const tryZ = clampToArena(player.px, player.pz + forwardZ * fwd + rightZ * str).z;
   if (!isBlockedByBox(player.px, tryZ, feetY)) player.pz = tryZ;
 
-  player.yaw += input.lookX * SHOTS_FIRED_LOOK_SPEED * dt;
+  const lookX = input.lookX + (input.lookDX ?? 0);
+  const lookY = input.lookY + (input.lookDY ?? 0);
+  player.yaw += lookX * SHOTS_FIRED_LOOK_SPEED * dt;
   player.pitch = Math.max(
     -SHOTS_FIRED_MAX_PITCH,
-    Math.min(SHOTS_FIRED_MAX_PITCH, player.pitch - input.lookY * SHOTS_FIRED_PITCH_SPEED * dt),
+    Math.min(SHOTS_FIRED_MAX_PITCH, player.pitch - lookY * SHOTS_FIRED_PITCH_SPEED * dt),
   );
+  input.lookDX = 0;
+  input.lookDY = 0;
 }
 
 function pruneTracers(room: ShotsFiredRoom): void {
@@ -423,7 +427,7 @@ function pruneTracers(room: ShotsFiredRoom): void {
   );
 }
 
-function checkShotsFiredWinner(room: ShotsFiredRoom): void {
+export function checkShotsFiredWinner(room: ShotsFiredRoom): void {
   const alive = [...room.players.values()].filter((p) => !p.eliminated);
 
   if (room.players.size === 1) {
@@ -562,9 +566,40 @@ export function meleeShotsFiredAttack(room: ShotsFiredRoom, playerId: string, no
   return true;
 }
 
+function clampLookDelta(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(-40, Math.min(40, value));
+}
+
+/** Place a player who joined after the match had already started. */
+export function spawnShotsFiredPlayer(room: ShotsFiredRoom, player: PlayerState): void {
+  const players = [...room.players.values()];
+  const index = Math.max(0, players.findIndex((p) => p.id === player.id));
+  const spawn = getPlayerSpawnPosition(index, players.length);
+  player.px = spawn.x;
+  player.pz = spawn.z;
+  player.py = 0;
+  player.yaw = (index / Math.max(players.length, 1)) * Math.PI * 2 + Math.PI;
+  player.pitch = 0;
+  player.score = 0;
+  player.lives = SHOTS_FIRED_MAX_HITS;
+  player.eliminated = false;
+  player.invulnUntil = Date.now() + 1500;
+  player.landscapeReady = true;
+  if (!room.jumpVel) room.jumpVel = new Map();
+  room.jumpVel.set(player.id, 0);
+  room.shotsFiredInputs.set(player.id, { ...ZERO_INPUT });
+}
+
 export function setShotsFiredInput(room: ShotsFiredRoom, playerId: string, input: CoinStickInput): boolean {
   if (!room.players.has(playerId)) return false;
-  room.shotsFiredInputs.set(playerId, normalizeCoinInput(input));
+  const prev = room.shotsFiredInputs.get(playerId);
+  const next = normalizeCoinInput(input);
+  const addX = clampLookDelta(input.lookDX ?? 0);
+  const addY = clampLookDelta(input.lookDY ?? 0);
+  next.lookDX = clampLookDelta((prev?.lookDX ?? 0) + addX);
+  next.lookDY = clampLookDelta((prev?.lookDY ?? 0) + addY);
+  room.shotsFiredInputs.set(playerId, next);
   return true;
 }
 
@@ -581,7 +616,8 @@ export function tickShotsFired(room: ShotsFiredRoom, dt: number, now: number): v
       continue;
     }
 
-    const input = room.shotsFiredInputs.get(player.id) ?? ZERO_INPUT;
+    const stored = room.shotsFiredInputs.get(player.id);
+    const input = stored ?? { ...ZERO_INPUT };
     applyStickInput(player, input, dt);
 
     const ground = supportHeightAt(player.px, player.pz, player.py);

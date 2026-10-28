@@ -9,11 +9,13 @@ import { getGameServerModule } from './games/registry.js';
 import { initCoinRush, setCoinStickInput, tickCoinRush } from './games/coin-rush/gameplay.js';
 import { clearCoinRushBots } from './games/coin-rush/module.js';
 import {
+  checkShotsFiredWinner,
   fireShotsFiredShot,
   initShotsFired,
   jumpShotsFired,
   meleeShotsFiredAttack,
   setShotsFiredInput,
+  spawnShotsFiredPlayer,
   tickShotsFired,
 } from './games/shots-fired/gameplay.js';
 import { initBalloonDrop, setBalloonInput, tickBalloonDrop } from './games/balloon-drop/gameplay.js';
@@ -439,7 +441,8 @@ export function addPlayer(
   isSocketConnected?: (id: string) => boolean,
 ): PlayerState | null {
   if (isBot(socketId)) return null;
-  if (room.phase !== 'lobby' && room.phase !== 'winner') {
+  const localRoom = room.sessionMode === 'local-controllers';
+  if (room.phase !== 'lobby' && room.phase !== 'winner' && !localRoom) {
     return null;
   }
   if (room.players.size >= MAX_PLAYERS) return null;
@@ -459,8 +462,20 @@ export function addPlayer(
 
   const color = pickRandomColor(room);
   const player = createPlayer(socketId, trimmed, 0, color);
+  if (localRoom) player.landscapeReady = true;
   room.players.set(socketId, player);
   reindexLanes(room);
+  if (localRoom && (room.phase === 'playing' || room.phase === 'countdown')) {
+    if (room.activeGameId === 'shots-fired') {
+      spawnShotsFiredPlayer(room, player);
+    } else if (room.activeGameId === 'hoe-down-derby') {
+      player.lives = MAX_LIVES;
+      player.eliminated = false;
+      player.isJumping = false;
+      player.jumpPhase = 0;
+      player.invulnUntil = Date.now() + 1200;
+    }
+  }
   return player;
 }
 
@@ -473,15 +488,21 @@ export function removePlayer(room: Room, socketId: string): void {
   room.lastMeleeAt.delete(socketId);
   room.balloonInputs.delete(socketId);
   room.drunkInputs.delete(socketId);
+  room.jumpVel.delete(socketId);
   reindexLanes(room);
   if (room.phase === 'orient') {
     tryBeginCountdown(room);
+  }
+  if (room.phase === 'playing' || room.phase === 'countdown') {
+    if (room.activeGameId === 'shots-fired') checkShotsFiredWinner(room);
+    else if (room.activeGameId === 'hoe-down-derby') checkWinner(room);
   }
 }
 
 export function kickPlayer(room: Room, targetId: string): boolean {
   if (isBot(targetId)) return false;
-  if (room.phase !== 'lobby' && room.phase !== 'winner') return false;
+  const betweenRounds = room.phase === 'lobby' || room.phase === 'winner';
+  if (!betweenRounds && room.sessionMode !== 'local-controllers') return false;
   if (!room.players.has(targetId)) return false;
   removePlayer(room, targetId);
   return true;
@@ -529,7 +550,8 @@ function beginRace(room: Room): void {
   const isShotsFired = gameId === 'shots-fired';
   const isDrunkDriver = gameId === 'drunk-driver';
   const isOrientGame = gameUsesOrientPhase(gameId);
-  room.phase = isOrientGame ? 'orient' : 'countdown';
+  const skipOrient = room.sessionMode === 'local-controllers';
+  room.phase = isOrientGame && !skipOrient ? 'orient' : 'countdown';
   room.countdown = COUNTDOWN_SECONDS;
   room.countdownTimer = 0;
   room.obstacles = [];
@@ -565,7 +587,7 @@ function beginRace(room: Room): void {
 
   for (const p of room.players.values()) {
     p.ready = false;
-    p.landscapeReady = isBot(p.id);
+    p.landscapeReady = isBot(p.id) || room.sessionMode === 'local-controllers';
     if (!isCoinRush && !isShotsFired && !isBalloonDrop && !isScribbleTime && !isDrunkDriver) {
       p.lives = MAX_LIVES;
       p.eliminated = false;

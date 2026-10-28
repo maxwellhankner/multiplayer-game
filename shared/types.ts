@@ -23,6 +23,13 @@ export type CoinStickInput = {
   moveY: number;
   lookX: number;
   lookY: number;
+  /**
+   * One-shot look added on the next simulation tick, then cleared.
+   * Mouse movement uses this so fast flicks are not dropped between ticks.
+   * Stick look stays on lookX / lookY.
+   */
+  lookDX?: number;
+  lookDY?: number;
 };
 
 export type DrunkDriverInput = {

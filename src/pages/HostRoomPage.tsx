@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import GameHostRouter from '../games/GameHostRouter';
 import Lobby from '../components/Lobby';
+import { LocalControllerLobby, LocalPlayerOverlay } from '../components/LocalControllers';
 import RoomSounds from '../components/RoomSounds';
 import ScreenControls from '../components/ScreenControls';
 import { useNetworkInfo, useRoomState, useSocket } from '../hooks/useSocket';
+import { useLocalControllers } from '../local/useLocalControllers';
 import type { LobbySettings } from '../../shared/platform';
 import { normalizeRoomCode } from '../../shared/routes';
 import type { RoomState } from '../../shared/types';
@@ -20,6 +22,17 @@ export default function HostRoomPage() {
   const { state, setState } = useRoomState(socket, roomCode);
   const [error, setError] = useState<string | null>(null);
   const [joining, setJoining] = useState(true);
+  const [playersOpen, setPlayersOpen] = useState(false);
+  const isLocal = state?.sessionMode === 'local-controllers';
+  const local = useLocalControllers({
+    roomId: roomCode,
+    enabled: isLocal,
+    inputSuspended: !isLocal || playersOpen || state?.phase === 'lobby' || state?.phase === 'winner' || state?.phase === 'orient',
+    joinEnabled: isLocal && (state?.phase === 'lobby' || playersOpen),
+    activeGameId: state?.activeGameId ?? null,
+    phase: state?.phase ?? 'lobby',
+    takenNames: state?.players.map((player) => player.name) ?? [],
+  });
 
   useEffect(() => {
     if (!roomCode) {
@@ -97,6 +110,10 @@ export default function HostRoomPage() {
     socket.current?.emit('host:bot-remove', botId);
   };
 
+  useEffect(() => {
+    if (state?.phase === 'lobby') setPlayersOpen(false);
+  }, [state?.phase]);
+
   if (!roomCode) {
     return null;
   }
@@ -144,7 +161,7 @@ export default function HostRoomPage() {
 
   const showGame = state.phase === 'orient' || state.phase === 'countdown' || state.phase === 'playing' || state.phase === 'winner';
 
-  if (state.phase === 'lobby' && !networkInfo) {
+  if (state.phase === 'lobby' && !networkInfo && !isLocal) {
     return (
       <div className="platform-shell">
         <ScreenControls onHome={handleHome} />
@@ -155,29 +172,78 @@ export default function HostRoomPage() {
     );
   }
 
-  const roomUrlBase = networkInfo!.roomUrl;
+  const roomUrlBase = networkInfo?.roomUrl ?? '';
   const gameTheme = showGame ? getGameThemeClass(state.activeGameId) : '';
+  const wantsMouse =
+    isLocal &&
+    local.hasKeyboard &&
+    state.activeGameId === 'shots-fired' &&
+    (state.phase === 'countdown' || state.phase === 'playing') &&
+    !playersOpen &&
+    !local.pointerLocked;
 
   return (
     <div className={showGame && gameTheme ? gameTheme : 'platform-shell'}>
       <RoomSounds state={state} />
-      <ScreenControls onHome={showGame ? handleHome : undefined} />
+      <ScreenControls
+        onHome={showGame ? handleHome : undefined}
+        onPlayers={isLocal && showGame ? () => setPlayersOpen((open) => !open) : undefined}
+        playersOpen={playersOpen}
+      />
       {state.phase === 'lobby' ? (
-        <div className="platform-page host-lobby-page">
-          <Lobby
-            state={state}
-            roomUrlBase={roomUrlBase}
-            onExit={() => navigate('/')}
-            onKick={handleKick}
-            onUpdateSettings={handleSettingsChange}
-            onAddBot={handleAddBot}
-            onRemoveBot={handleRemoveBot}
-            onStartBotsOnly={handleStartBotsOnly}
-          />
+        <div className={`platform-page host-lobby-page${isLocal ? ' host-lobby-page--local' : ''}`}>
+          {isLocal ? (
+            <LocalControllerLobby
+              state={state}
+              slots={local.slots}
+              unassignedPads={local.unassignedPads}
+              notice={local.notice}
+              onAddKeyboard={local.addKeyboard}
+              onRemoveSlot={local.removeSlot}
+              onStart={local.startMatch}
+              onExit={() => navigate('/')}
+              onUpdateSettings={handleSettingsChange}
+              onAddBot={handleAddBot}
+              onRemoveBot={handleRemoveBot}
+              onStartBotsOnly={handleStartBotsOnly}
+            />
+          ) : (
+            <Lobby
+              state={state}
+              roomUrlBase={roomUrlBase}
+              onExit={() => navigate('/')}
+              onKick={handleKick}
+              onUpdateSettings={handleSettingsChange}
+              onAddBot={handleAddBot}
+              onRemoveBot={handleRemoveBot}
+              onStartBotsOnly={handleStartBotsOnly}
+            />
+          )}
         </div>
       ) : (
         <div className="host-page">
           {showGame && <GameHostRouter state={state} />}
+          {wantsMouse && (
+            <button
+              type="button"
+              className="local-mouse-banner"
+              onClick={() => document.body.requestPointerLock()}
+            >
+              Click to capture the mouse
+            </button>
+          )}
+          {isLocal && playersOpen && (
+            <LocalPlayerOverlay
+              state={state}
+              slots={local.slots}
+              unassignedPads={local.unassignedPads}
+              notice={local.notice}
+              onAddKeyboard={local.addKeyboard}
+              onRemoveSlot={local.removeSlot}
+              onClose={() => setPlayersOpen(false)}
+              onBackToSetup={handleHome}
+            />
+          )}
         </div>
       )}
     </div>

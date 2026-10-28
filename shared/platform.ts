@@ -5,12 +5,13 @@ import {
   SESSION_MODES,
   getSessionModeInfo,
   getSessionModeLabel,
+  isSessionMode,
   normalizeSessionMode,
 } from './session.js';
 
 export type { SessionMode, SessionModeInfo } from './session.js';
 export type { GameDefinition } from './games/types.js';
-export { SESSION_MODES, getSessionModeInfo, getSessionModeLabel, normalizeSessionMode };
+export { SESSION_MODES, getSessionModeInfo, getSessionModeLabel, isSessionMode, normalizeSessionMode };
 export { GAMES, getGameById, getGamesForSessionMode };
 
 export type GameSelectionMode = 'random' | 'random-from-pool' | 'specific';
