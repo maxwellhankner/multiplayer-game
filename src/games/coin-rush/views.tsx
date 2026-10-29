@@ -70,7 +70,6 @@ export function CoinRushControllerView({
     return (
       <CoinRushControls
         playerName={me.name}
-        playerColor={me.color}
         score={me.score}
         winCoins={COIN_RUSH_WIN_COINS}
         onInput={sendInput}
@@ -84,7 +83,6 @@ export function CoinRushControllerView({
     return (
       <CoinRushControls
         playerName={me.name}
-        playerColor={me.color}
         score={me.score}
         winCoins={COIN_RUSH_WIN_COINS}
         onInput={sendInput}

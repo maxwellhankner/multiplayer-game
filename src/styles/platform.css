@@ -337,6 +337,10 @@
   overflow: hidden;
 }
 
+.host-lobby-page--local .lobby {
+  overflow: auto;
+}
+
 .local-device-tag {
   margin-left: 0.4rem;
   color: var(--fg-muted);
@@ -357,6 +361,12 @@
 
 .local-start-btn {
   margin-top: 1rem;
+}
+
+.local-menu-hint {
+  margin: 0.75rem 0 0;
+  color: var(--fg-muted);
+  font-size: 0.85rem;
 }
 
 .local-pad-waiting .player-dot {
@@ -431,6 +441,132 @@
   background: #111;
   border: 1px solid #333;
   color: #fff;
+}
+
+.local-match-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 11000;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  box-sizing: border-box;
+}
+
+.local-match-dialog.panel {
+  width: min(720px, 100%);
+  max-height: min(88vh, 100%);
+  overflow: auto;
+  background: #111;
+  color: #fff;
+  border: 1px solid #444;
+  padding: 1.25rem 1.35rem 1.1rem;
+}
+
+.local-match-guns {
+  margin: 0 0 1rem;
+}
+
+.local-match-guns h2 {
+  margin: 0 0 0.65rem;
+  font-size: 1rem;
+}
+
+.local-gun-player + .local-gun-player {
+  margin-top: 0.75rem;
+}
+
+.local-gun-name {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.35rem;
+  font-weight: 700;
+}
+
+.local-gun-row {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+}
+
+.local-gun-slot {
+  color: #aaa;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.local-gun-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.local-gun-btn {
+  padding: 0.4rem 0.25rem;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background: #1b1b1b;
+  color: #fff;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.local-gun-btn--active {
+  background: #fff;
+  color: #111;
+  border-color: #fff;
+}
+
+.local-match-dialog h1 {
+  margin: 0 0 0.85rem;
+  font-size: 1.35rem;
+}
+
+.local-match-chart {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.local-match-chart th,
+.local-match-chart td {
+  text-align: left;
+  padding: 0.45rem 0.35rem;
+  border-bottom: 1px solid #333;
+}
+
+.local-match-chart th:nth-child(n + 2),
+.local-match-chart td:nth-child(n + 2) {
+  text-align: right;
+  width: 4.75rem;
+}
+
+.local-match-player {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.local-match-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.local-match-hint {
+  margin: 0.75rem 0 0;
+  color: #888;
+  font-size: 0.8rem;
+  text-align: center;
 }
 
 .local-mouse-banner {
@@ -689,7 +825,7 @@
 
 .lobby-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1.5fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
   align-items: start;
 }
@@ -1074,6 +1210,27 @@
 }
 
 .game-mode-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.shooters-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.lobby-panel-header + .shooters-settings {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.shooters-option-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
@@ -1781,6 +1938,21 @@
   .lobby-layout {
     grid-template-columns: 1fr;
   }
+
+  .platform-shell:has(.host-lobby-page) .platform-page.host-lobby-page {
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    overflow: auto;
+    padding: 1.25rem;
+  }
+
+  .host-lobby-page .lobby {
+    max-height: none;
+    overflow: visible;
+    margin-top: auto;
+    margin-bottom: auto;
+  }
 }
 
 /* Mobile — hide screen menu and drop reserved top spacing (must follow base rules) */
@@ -2067,4 +2239,58 @@ button:focus:not(:focus-visible) {
   font-family: ui-monospace, monospace;
   color: var(--fg-muted);
   word-break: break-all;
+}
+
+.host-lobby-page--local button,
+.local-match-menu button,
+.local-players-dialog button {
+  background: #000;
+  color: #888;
+  border: 1px solid #888;
+}
+
+.host-lobby-page--local .game-mode-btn--active,
+.local-match-menu .local-gun-btn--active {
+  background: #000;
+  color: #fff;
+  border-color: #fff;
+  font-weight: 700;
+}
+
+.host-lobby-page--local button:hover:not(:disabled),
+.host-lobby-page--local button.controller-focus,
+.host-lobby-page--local button.controller-focus:hover,
+.host-lobby-page--local button.controller-focus:focus,
+.host-lobby-page--local .game-mode-btn--active:hover:not(:disabled),
+.host-lobby-page--local .game-mode-btn--active.controller-focus,
+.local-match-menu button:hover:not(:disabled),
+.local-match-menu button.controller-focus,
+.local-match-menu button.controller-focus:hover,
+.local-match-menu .local-gun-btn--active:hover:not(:disabled),
+.local-match-menu .local-gun-btn--active.controller-focus,
+.local-players-dialog button:hover:not(:disabled),
+.local-players-dialog button.controller-focus,
+.local-players-dialog button.controller-focus:hover {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+}
+
+button.controller-focus,
+button.controller-focus:hover,
+button.controller-focus:focus,
+label.controller-focus,
+label.controller-focus:hover,
+label.controller-focus:focus {
+  position: relative;
+  z-index: 4;
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+  box-shadow: none;
+  outline: none;
+}
+
+label.controller-focus span {
+  color: #000;
 }

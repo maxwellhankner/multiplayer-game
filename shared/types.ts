@@ -87,8 +87,10 @@ export interface PlayerState {
   invulnUntil: number;
   flipPhase: number;
   color: string;
-  /** Game score (coins, survival time ms, etc.) */
+  /** Game score (coins, survival time ms, kills, etc.) */
   score: number;
+  /** Times this player has been eliminated in the current round */
+  deaths: number;
   /** Session wins — persists across games in the same room */
   wins: number;
   /** Coin Rush — phone held in landscape before countdown */
@@ -109,6 +111,16 @@ export interface PlayerState {
   sprinting?: boolean;
   /** Shooters Shoot — gameTime when the current reload finishes; 0 if idle */
   reloadUntil?: number;
+  /** Shooters Shoot — gameTime when this player respawns; 0 if not waiting */
+  respawnAt?: number;
+  /** Shooters Shoot — primary then secondary */
+  guns?: [string, string];
+  /** Shooters Shoot — 0 primary, 1 secondary */
+  gunIndex?: 0 | 1;
+  /** Shooters Shoot — magazine rounds on the gun that is not equipped */
+  stowedBullets?: number;
+  /** Shooters Shoot — reserve rounds for the gun that is not equipped */
+  stowedReserve?: number;
   /** Shots Fired — gameTime when this player last melee'd (for view animation) */
   lastMeleeAt?: number;
 }

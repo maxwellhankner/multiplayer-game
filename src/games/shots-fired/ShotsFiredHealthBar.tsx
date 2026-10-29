@@ -4,6 +4,7 @@ interface ShotsFiredHealthBarProps {
   lives: number;
   maxLives?: number;
   className?: string;
+  color?: string;
 }
 
 function healthTier(lives: number): 'green' | 'orange' | 'red' | 'empty' {
@@ -17,6 +18,7 @@ export default function ShotsFiredHealthBar({
   lives,
   maxLives = SHOTS_FIRED_MAX_HITS,
   className = '',
+  color,
 }: ShotsFiredHealthBarProps) {
   const clamped = Math.max(0, Math.min(lives, maxLives));
   const pct = maxLives > 0 ? (clamped / maxLives) * 100 : 0;
@@ -30,6 +32,7 @@ export default function ShotsFiredHealthBar({
       aria-valuemin={0}
       aria-valuemax={maxLives}
       aria-label={`Health: ${clamped} of ${maxLives}`}
+      style={color ? { ['--pane-color' as string]: color } : undefined}
     >
       <div className="shots-fired-health-bar-track">
         <div

@@ -39,7 +39,7 @@ export default function ShotsFiredPaneGrid({ players, mode, winnerId = null }: S
             )}
             {mode === 'play' && (
               <div className="shots-fired-pane-play-body">
-                <span className="shots-fired-pane-name game-player-name pane-player-color">
+                <span className="shots-fired-pane-name game-player-name">
                   {player.name}
                 </span>
                 <ShotsFiredHealthBar
@@ -50,13 +50,13 @@ export default function ShotsFiredPaneGrid({ players, mode, winnerId = null }: S
                   {player.score} kill{player.score === 1 ? '' : 's'}
                 </span>
                 {player.eliminated && (
-                  <span className="shots-fired-pane-dead pane-player-color">DEAD</span>
+                  <span className="shots-fired-pane-dead">DEAD</span>
                 )}
               </div>
             )}
             {mode === 'orient' && (
               <div className="shots-fired-pane-orient">
-                <p className="shots-fired-pane-center-name game-player-name pane-player-color">
+                <p className="shots-fired-pane-center-name game-player-name">
                   {player.name}
                 </p>
                 <p
@@ -71,7 +71,7 @@ export default function ShotsFiredPaneGrid({ players, mode, winnerId = null }: S
               </div>
             )}
             {mode === 'countdown' && (
-              <p className="shots-fired-pane-center-name game-player-name pane-player-color">
+              <p className="shots-fired-pane-center-name game-player-name">
                 {player.name}
               </p>
             )}

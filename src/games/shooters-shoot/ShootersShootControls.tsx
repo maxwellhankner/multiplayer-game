@@ -11,6 +11,7 @@ interface ShootersShootControlsProps {
   hitsLeft: number;
   bullets: number;
   ammoReserve: number;
+  gunName?: string;
   onInput: (input: CoinStickInput) => void;
   onShoot: () => void;
   onMelee: () => void;
@@ -30,6 +31,7 @@ export default function ShootersShootControls({
   hitsLeft,
   bullets,
   ammoReserve,
+  gunName,
   onInput,
   onShoot,
   onMelee,
@@ -76,11 +78,11 @@ export default function ShootersShootControls({
       )}
       <div className="shooters-shoot-controller-top-hud">
         <span className="shooters-shoot-controller-name">{playerName}</span>
-        <ShootersShootHealthBar lives={hitsLeft} />
+        <ShootersShootHealthBar lives={hitsLeft} color={playerColor} />
         <span className="shooters-shoot-kills-line">
           Kills: {kills}
           <span className="shooters-shoot-controller-ammo">
-            {bullets} / {ammoReserve}
+            {gunName ? `${gunName} ` : ''}{bullets} / {ammoReserve}
           </span>
         </span>
       </div>
@@ -155,7 +157,6 @@ export default function ShootersShootControls({
         <button
           type="button"
           className="shooters-shoot-action-btn shooters-shoot-fire-btn"
-          style={{ backgroundColor: playerColor }}
           onPointerDown={(e) => {
             e.preventDefault();
             onShoot();

@@ -3,6 +3,7 @@ import { GAME_CONSTANTS, GAMEPLAY, getHorseHitboxBounds, getJumpHeightAtPhase, M
 import { getSessionWinPlayerIds } from '../shared/games/session-wins.js';
 import { isBot, allHumansReady } from '../shared/games/bots.js';
 import { getGameById, getGamesForSessionMode } from '../shared/games/registry.js';
+import { normalizeShootersShootSettings } from '../shared/games/shooters-shoot/lobby.js';
 import { getDefaultLobbySettings, resolveGameId } from '../shared/platform.js';
 import { isValidRoomCode, normalizeRoomCode, randomRoomCode } from '../shared/routes.js';
 import { getGameServerModule } from './games/registry.js';
@@ -25,10 +26,13 @@ import {
   jumpShootersShoot,
   meleeShootersShootAttack,
   reloadShootersShoot,
+  setShootersShootGun,
   setShootersShootInput,
   spawnShootersShootPlayer,
+  swapShootersShootGun,
   tickShootersShoot,
 } from './games/shooters-shoot/gameplay.js';
+import { isShooterGunId } from '../shared/games/shooters-shoot/guns.js';
 import { initBalloonDrop, setBalloonInput, tickBalloonDrop } from './games/balloon-drop/gameplay.js';
 import { clearBalloonDropBots } from './games/balloon-drop/module.js';
 import {
@@ -135,6 +139,8 @@ interface Room {
   scribbleBotDrawAt: Map<string, number>;
   hostOnline: boolean;
   winsAwarded: boolean;
+  /** Local controller match menu is open — simulation waits. */
+  paused: boolean;
 }
 
 const rooms = new Map<string, Room>();
@@ -181,6 +187,7 @@ function buildEmptyRoom(id: string, sessionMode: SessionMode): Room {
     scribbleBotDrawAt: new Map(),
     hostOnline: false,
     winsAwarded: false,
+    paused: false,
   };
 }
 
@@ -200,6 +207,7 @@ function createPlayer(id: string, name: string, lane: number, color: string): Pl
     flipPhase: 0,
     color,
     score: 0,
+    deaths: 0,
     px: 0,
     pz: 0,
     py: 0,
@@ -316,6 +324,7 @@ export function exportDevRoomSnapshots(): DevRoomSnapshot[] {
     lobbySettings: {
       ...room.lobbySettings,
       gamePool: [...room.lobbySettings.gamePool],
+      shootersShoot: normalizeShootersShootSettings(room.lobbySettings.shootersShoot),
     },
     trackWidth: room.trackWidth,
     players: [...room.players.values()].sort((a, b) => a.lane - b.lane),
@@ -332,6 +341,7 @@ export function importDevRoomSnapshots(snapshots: DevRoomSnapshot[]): void {
       lobbySettings: {
         ...snapshot.lobbySettings,
         gamePool: [...snapshot.lobbySettings.gamePool],
+        shootersShoot: normalizeShootersShootSettings(snapshot.lobbySettings.shootersShoot),
       },
       activeGameId: null,
       players: new Map(
@@ -354,6 +364,7 @@ export function importDevRoomSnapshots(snapshots: DevRoomSnapshot[]): void {
               isJumping: false,
               invulnUntil: 0,
               score: 0,
+              deaths: 0,
               px: 0,
               pz: 0,
               py: 0,
@@ -397,6 +408,7 @@ export function importDevRoomSnapshots(snapshots: DevRoomSnapshot[]): void {
       scribbleBotDrawAt: new Map(),
       hostOnline: false,
       winsAwarded: false,
+      paused: false,
     };
     reindexLanes(room);
     rooms.set(room.id, room);
@@ -429,6 +441,7 @@ export function rejoinPlayer(
         isJumping: false,
         invulnUntil: 0,
         score: 0,
+        deaths: 0,
         px: 0,
         pz: 0,
         py: 0,
@@ -643,6 +656,7 @@ function beginRace(room: Room): void {
       p.flipPhase = 0;
     }
     p.score = 0;
+    p.deaths = 0;
   }
 
   if (isOrientGame) {
@@ -844,6 +858,19 @@ export function triggerShootersShootReload(room: Room, socketId: string): boolea
   return reloadShootersShoot(room, socketId);
 }
 
+export function triggerShootersShootSwap(room: Room, socketId: string): boolean {
+  if (room.activeGameId !== 'shooters-shoot') return false;
+  return swapShootersShootGun(room, socketId);
+}
+
+export function setShootersShootLoadout(room: Room, playerId: string, slot: 0 | 1, gunId: string): boolean {
+  if (room.activeGameId !== 'shooters-shoot') return false;
+  if (room.sessionMode !== 'local-controllers') return false;
+  if (room.phase === 'lobby') return false;
+  if (!isShooterGunId(gunId)) return false;
+  return setShootersShootGun(room, playerId, slot, gunId);
+}
+
 export function setPlayerBalloonInput(room: Room, socketId: string, input: BalloonInput): boolean {
   if (room.activeGameId !== 'balloon-drop') return false;
   if (room.phase !== 'playing' && room.phase !== 'countdown') return false;
@@ -906,6 +933,7 @@ function resetRoomToLobby(room: Room): void {
   room.countdown = COUNTDOWN_SECONDS;
   room.countdownTimer = 0;
   room.winsAwarded = false;
+  room.paused = false;
   clearCoinRushBots();
   clearBalloonDropBots();
   clearDrunkDriverBots();
@@ -922,6 +950,7 @@ function resetRoomToLobby(room: Room): void {
     p.isJumping = false;
     p.invulnUntil = 0;
     p.score = 0;
+    p.deaths = 0;
     p.px = 0;
     p.pz = 0;
     p.py = 0;
@@ -936,6 +965,29 @@ export function returnToLobby(room: Room): boolean {
   if (room.phase === 'lobby') return false;
   resetRoomToLobby(room);
   return true;
+}
+
+/** Start the current game over without returning to the lobby. */
+export function setRoomPaused(room: Room, paused: boolean): void {
+  if (room.sessionMode !== 'local-controllers' || room.phase === 'lobby') {
+    room.paused = false;
+    return;
+  }
+  room.paused = paused;
+  if (!paused) return;
+  room.coinInputs.clear();
+  room.shotsFiredInputs.clear();
+  room.shootersShootInputs.clear();
+  room.balloonInputs.clear();
+  room.drunkInputs.clear();
+}
+
+export function restartMatch(room: Room): boolean {
+  if (room.phase === 'lobby' || room.players.size === 0) return false;
+  room.winsAwarded = false;
+  room.paused = false;
+  beginRace(room);
+  return room.phase !== 'lobby';
 }
 
 function runGameBotTick(room: Room, dt: number): void {
@@ -995,6 +1047,7 @@ function runGameBotTick(room: Room, dt: number): void {
 }
 
 export function tickRoom(room: Room, dt: number): void {
+  if (room.paused) return;
   const now = Date.now();
 
   if (room.phase === 'countdown') {
@@ -1105,6 +1158,10 @@ export function updateLobbySettings(room: Room, patch: Partial<LobbySettings>): 
     ...room.lobbySettings,
     ...patch,
     gamePool: patch.gamePool ? [...patch.gamePool] : [...room.lobbySettings.gamePool],
+    shootersShoot: normalizeShootersShootSettings({
+      ...room.lobbySettings.shootersShoot,
+      ...patch.shootersShoot,
+    }),
   };
 
   room.lobbySettings = next;
@@ -1126,6 +1183,7 @@ export function serializeRoom(room: Room): RoomState {
     lobbySettings: {
       ...room.lobbySettings,
       gamePool: [...room.lobbySettings.gamePool],
+      shootersShoot: normalizeShootersShootSettings(room.lobbySettings.shootersShoot),
     },
     activeGameId: room.activeGameId,
     players: [...room.players.values()]

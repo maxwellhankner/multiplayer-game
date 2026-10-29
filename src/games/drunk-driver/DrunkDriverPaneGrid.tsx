@@ -45,16 +45,16 @@ export default function DrunkDriverPaneGrid({
           >
             {mode === 'play' && (
               <div className="drunk-driver-pane-play-body">
-                <span className="drunk-driver-pane-name game-player-name pane-player-color">
+                <span className="drunk-driver-pane-name game-player-name">
                   {player.name}
                 </span>
-                <span className="drunk-driver-pane-score pane-player-color">{formatDistance(player.pz)}</span>
+                <span className="drunk-driver-pane-score">{formatDistance(player.pz)}</span>
               </div>
             )}
 
             {mode === 'orient' && (
               <div className="drunk-driver-pane-orient">
-                <p className="drunk-driver-pane-center-name game-player-name pane-player-color">
+                <p className="drunk-driver-pane-center-name game-player-name">
                   {player.name}
                 </p>
                 <p
@@ -70,7 +70,7 @@ export default function DrunkDriverPaneGrid({
             )}
 
             {mode === 'startlight' && (
-              <p className="drunk-driver-pane-center-name game-player-name pane-player-color">
+              <p className="drunk-driver-pane-center-name game-player-name">
                 {player.name}
               </p>
             )}

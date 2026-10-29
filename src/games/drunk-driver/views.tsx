@@ -67,7 +67,6 @@ export function DrunkDriverControllerView({
     return (
       <DrunkDriverControls
         playerName={me.name}
-        playerColor={me.color}
         progressPct={progressPct}
         onInput={sendInput}
         waitingHint={allLandscapeReady ? undefined : 'Waiting for everyone to tilt their phones…'}
@@ -79,7 +78,6 @@ export function DrunkDriverControllerView({
     return (
       <DrunkDriverControls
         playerName={me.name}
-        playerColor={me.color}
         progressPct={progressPct}
         onInput={sendInput}
         startLight={state.phase === 'countdown'}

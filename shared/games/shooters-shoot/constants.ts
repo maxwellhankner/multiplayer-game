@@ -1,5 +1,5 @@
+export { SHOOTERS_SHOOT_ARENA_HALF } from './map.js';
 export {
-  COIN_RUSH_ARENA_HALF as SHOOTERS_SHOOT_ARENA_HALF,
   COIN_RUSH_MOVE_SPEED as SHOOTERS_SHOOT_MOVE_SPEED,
   COIN_RUSH_LOOK_SPEED as SHOOTERS_SHOOT_LOOK_SPEED,
   COIN_RUSH_PITCH_SPEED as SHOOTERS_SHOOT_PITCH_SPEED,
@@ -35,7 +35,7 @@ export const SHOOTERS_SHOOT_HITBOX_BOTTOM_Y = 0.15;
 export const SHOOTERS_SHOOT_HITBOX_TOP_Y = 1.45;
 
 /** Max raycast distance */
-export const SHOOTERS_SHOOT_MAX_RANGE = 40;
+export const SHOOTERS_SHOOT_MAX_RANGE = 90;
 
 /** Minimum ms between shots */
 export const SHOOTERS_SHOOT_FIRE_COOLDOWN_MS = 380;
@@ -62,7 +62,10 @@ export const SHOOTERS_SHOOT_TRACER_DURATION_MS = 180;
 export const SHOOTERS_SHOOT_IMPACT_DURATION_MS = 240;
 
 /** Arena wall height for bullet collision */
-export const SHOOTERS_SHOOT_WALL_HEIGHT = 2.5;
+export const SHOOTERS_SHOOT_WALL_HEIGHT = 8;
+
+/** Delay before a player returns in kill-limit and timed matches */
+export const SHOOTERS_SHOOT_RESPAWN_MS = 2000;
 
 /** Dead bodies float upward (units per second) */
 export const SHOOTERS_SHOOT_DEATH_FLOAT_SPEED = 1.4;
@@ -115,28 +118,5 @@ export const SHOOTERS_SHOOT_RESERVE_AMMO = 36;
 /** Reload length */
 export const SHOOTERS_SHOOT_RELOAD_MS = 2000;
 
-/** A solid box prop in the arena. (x,z) center, half extents hw/hd, height h. */
-export interface ShootersShootBox {
-  x: number;
-  z: number;
-  hw: number;
-  hd: number;
-  h: number;
-  /** Visual style only — gameplay height comes from h */
-  variant?: 'pillar' | 'crate';
-}
-
-/**
- * Static box layout. Crates (h 1.1) and pillars (h 2.6) are both jumpable platforms.
- * Jump apex ≈ 2.75. Positions avoid the player spawn ring (radius ~4–6) and center.
- */
-export const SHOOTERS_SHOOT_BOXES: readonly ShootersShootBox[] = [
-  { x: 0, z: 9.5, hw: 1.65, hd: 1.65, h: 2.6, variant: 'pillar' },
-  { x: 0, z: -9.5, hw: 1.65, hd: 1.65, h: 2.6, variant: 'pillar' },
-  { x: 9.5, z: 0, hw: 1.65, hd: 1.65, h: 2.6, variant: 'pillar' },
-  { x: -9.5, z: 0, hw: 1.65, hd: 1.65, h: 2.6, variant: 'pillar' },
-  { x: 6, z: 6, hw: 1.85, hd: 1.85, h: 1.1, variant: 'crate' },
-  { x: -6, z: 6, hw: 1.85, hd: 1.85, h: 1.1, variant: 'crate' },
-  { x: 6, z: -6, hw: 1.85, hd: 1.85, h: 1.1, variant: 'crate' },
-  { x: -6, z: -6, hw: 1.85, hd: 1.85, h: 1.1, variant: 'crate' },
-];
+export type { ShootersShootBox, ShootersShootDome } from './map.js';
+export { SHOOTERS_SHOOT_BOXES, SHOOTERS_SHOOT_DOMES } from './map.js';

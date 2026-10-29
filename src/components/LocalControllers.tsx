@@ -19,8 +19,10 @@ const CONTROL_COPY: Record<string, { title: string; lines: string[] }> = {
       'Crouch — Circle / B, or Ctrl',
       'Shoot — R2 / RT, or left click',
       'Reload — Square / X, or the X key',
-      'Melee — Triangle / Y, or right click',
+      'Swap guns — Triangle / Y, or Q',
+      'Melee — click the right stick, or right click',
       'Jump — Cross / A, or Space',
+      'Menus — stick or D-pad, A or X to select, Start for the match menu',
     ],
   },
   'shots-fired': {
@@ -59,6 +61,7 @@ interface LocalPlayerPanelProps {
   onAddBot?: () => void;
   onRemoveBot?: (botId: string) => void;
   showLegend?: boolean;
+  focusAddBot?: boolean;
 }
 
 export function LocalPlayerPanel({
@@ -72,6 +75,7 @@ export function LocalPlayerPanel({
   onAddBot,
   onRemoveBot,
   showLegend = true,
+  focusAddBot = false,
 }: LocalPlayerPanelProps) {
   const bots = state.players.filter((player) => isBot(player.id));
   const gameDef = getLobbyGameDefinition(state.sessionMode, state.lobbySettings.specificGameId);
@@ -85,7 +89,13 @@ export function LocalPlayerPanel({
         <h1>Players ({state.players.length}/{MAX_PLAYERS})</h1>
         <div className="lobby-panel-header-actions">
           {showBots && onAddBot && (
-            <button type="button" className="lobby-panel-btn" disabled={!canAddBot} onClick={onAddBot}>
+            <button
+              type="button"
+              className="lobby-panel-btn"
+              disabled={!canAddBot}
+              data-controller-initial={focusAddBot ? '' : undefined}
+              onClick={onAddBot}
+            >
               Add bot
             </button>
           )}
@@ -225,6 +235,7 @@ export function LocalControllerLobby({
             </button>
           </div>
           {modeInfo && <p className="lobby-session-mode">{modeInfo.description}</p>}
+          <p className="local-menu-hint">Stick or D-pad moves the highlight. A or X selects.</p>
           {legends.length > 0 && (
             <div className="local-control-legend">
               {legends.map((legend) => (
@@ -252,6 +263,7 @@ export function LocalControllerLobby({
             onRemoveSlot={onRemoveSlot}
             onAddBot={onAddBot}
             onRemoveBot={onRemoveBot}
+            focusAddBot={!canStart}
           />
         </div>
         <div className="panel lobby-panel lobby-panel--games">
@@ -261,7 +273,13 @@ export function LocalControllerLobby({
             onChange={onUpdateSettings}
             onReset={() => onUpdateSettings(getResetLobbySettings(state.sessionMode))}
           />
-          <button type="button" className={`btn local-start-btn ${canStart ? 'btn-primary' : 'btn-secondary'}`} disabled={!canStart} onClick={handleStart}>
+          <button
+            type="button"
+            className={`btn local-start-btn ${canStart ? 'btn-primary' : 'btn-secondary'}`}
+            disabled={!canStart}
+            data-controller-initial={canStart ? '' : undefined}
+            onClick={handleStart}
+          >
             Start game
           </button>
           {!canStart && (
@@ -300,7 +318,12 @@ export function LocalPlayerOverlay({
 
   return (
     <div className="local-players-overlay">
-      <div className="local-players-dialog panel" role="dialog" aria-label="Player settings">
+      <div
+        className="local-players-dialog panel"
+        role="dialog"
+        aria-label="Player settings"
+        data-controller-modal
+      >
         <div className="lobby-panel-header">
           <h1>Player settings</h1>
         </div>
@@ -314,7 +337,7 @@ export function LocalPlayerOverlay({
           onRemoveSlot={onRemoveSlot}
         />
         <div className="local-overlay-actions">
-          <button type="button" className="btn btn-secondary" onClick={onClose}>
+          <button type="button" className="btn btn-secondary" data-controller-initial onClick={onClose}>
             Done
           </button>
           <button type="button" className="btn btn-primary" onClick={onBackToSetup}>

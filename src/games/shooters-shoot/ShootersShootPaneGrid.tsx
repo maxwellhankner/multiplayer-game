@@ -1,4 +1,4 @@
-import { SHOOTERS_SHOOT_RELOAD_MS } from '../../../shared/games/shooters-shoot/constants';
+import { equippedGun, playerGunIndex, playerGuns, shooterGun } from '../../../shared/games/shooters-shoot/guns';
 import { getSplitPanes } from '../coin-rush/splitLayout';
 import type { RoomState } from '../../../shared/types';
 import ShootersShootCrosshair from './ShootersShootCrosshair';
@@ -14,45 +14,47 @@ interface ShootersShootPaneGridProps {
 }
 
 function ShootersShootAmmo({
+  gunName,
+  otherName,
   bullets,
+  magSize,
   reserve,
   reloadUntil,
+  reloadMs,
   gameTime,
 }: {
+  gunName: string;
+  otherName: string;
   bullets: number;
+  magSize: number;
   reserve: number;
   reloadUntil: number;
+  reloadMs: number;
   gameTime: number;
 }) {
   const reloadLeft = reloadUntil - gameTime;
   const reloading = reloadLeft > 0;
-  const progress = reloading ? 1 - reloadLeft / SHOOTERS_SHOOT_RELOAD_MS : 0;
+  const progress = reloading ? 1 - reloadLeft / Math.max(1, reloadMs) : 0;
   const empty = bullets <= 0 && !reloading;
 
   return (
     <div className={`shooters-shoot-ammo${empty ? ' shooters-shoot-ammo--empty' : ''}`}>
-      {reloading ? (
-        <div className="shooters-shoot-reload">
-          <span className="shooters-shoot-reload-label">Reloading</span>
-          <span className="shooters-shoot-reload-track">
-            <span className="shooters-shoot-reload-fill" style={{ width: `${Math.min(100, progress * 100)}%` }} />
-          </span>
-        </div>
-      ) : (
-        <span className="shooters-shoot-ammo-key">X</span>
+      <span className="shooters-shoot-ammo-name">{gunName}</span>
+      {reloading && (
+        <span className="shooters-shoot-reload-track" aria-label="Reloading">
+          <span className="shooters-shoot-reload-fill" style={{ width: `${Math.min(100, progress * 100)}%` }} />
+        </span>
       )}
       <span className="shooters-shoot-ammo-count">
-        <span className="shooters-shoot-ammo-stack">
-          <span className="shooters-shoot-ammo-caption">Gun</span>
-          <span className="shooters-shoot-ammo-mag">{bullets}</span>
-        </span>
-        <span className="shooters-shoot-ammo-stack">
-          <span className="shooters-shoot-ammo-caption">Body</span>
-          <span className="shooters-shoot-ammo-reserve">{reserve}</span>
-        </span>
+        {bullets}/{magSize} - {reserve}
       </span>
+      <span className="shooters-shoot-ammo-other">Y · {otherName}</span>
     </div>
   );
+}
+
+function tally(count: number, singular: string, plural: string): string {
+  return `${count} ${count === 1 ? singular : plural}`;
 }
 
 export default function ShootersShootPaneGrid({
@@ -61,7 +63,7 @@ export default function ShootersShootPaneGrid({
   winnerId = null,
   gameTime = 0,
 }: ShootersShootPaneGridProps) {
-  const panes = getSplitPanes(players.length);
+  const panes = getSplitPanes(players.length, { preserveAspect: true });
 
   return (
     <>
@@ -70,6 +72,7 @@ export default function ShootersShootPaneGrid({
         if (!pane) return null;
         const isWinner = mode === 'winner' && player.id === winnerId;
         const hitsLeft = Math.max(0, player.lives);
+        const gun = equippedGun(player);
 
         return (
           <div
@@ -87,32 +90,35 @@ export default function ShootersShootPaneGrid({
               <ShootersShootCrosshair />
             )}
             {mode === 'play' && (
-              <div className="shooters-shoot-pane-play-body">
-                <span className="shooters-shoot-pane-name game-player-name pane-player-color">
-                  {player.name}
-                </span>
-                <span className="shooters-shoot-kills-line">
-                  {player.score} kill{player.score === 1 ? '' : 's'}
+              <div className="shooters-shoot-status">
+                {!player.eliminated && (
+                  <ShootersShootHealthBar lives={hitsLeft} className="shooters-shoot-health--host" />
+                )}
+                <span className="shooters-shoot-kd">
+                  {tally(player.score, 'kill', 'kills')} · {tally(player.deaths ?? 0, 'death', 'deaths')}
                 </span>
               </div>
             )}
             {mode === 'play' && !player.eliminated && (
-              <>
-                <ShootersShootHealthBar lives={hitsLeft} className="shooters-shoot-health--host" />
-                <ShootersShootAmmo
-                  bullets={player.bullets ?? 0}
-                  reserve={player.ammoReserve ?? 0}
-                  reloadUntil={player.reloadUntil ?? 0}
-                  gameTime={gameTime}
-                />
-              </>
+              <ShootersShootAmmo
+                gunName={gun.name}
+                otherName={shooterGun(playerGuns(player)[playerGunIndex(player) === 0 ? 1 : 0]).name}
+                bullets={player.bullets ?? 0}
+                magSize={gun.magSize}
+                reserve={player.ammoReserve ?? 0}
+                reloadUntil={player.reloadUntil ?? 0}
+                reloadMs={gun.reloadMs}
+                gameTime={gameTime}
+              />
             )}
             {mode === 'play' && player.eliminated && (
-              <span className="shooters-shoot-pane-dead pane-player-color">DEAD</span>
+              <span className="shooters-shoot-pane-dead">
+                {(player.respawnAt ?? 0) > 0 ? 'RESPAWN' : 'DEAD'}
+              </span>
             )}
             {mode === 'orient' && (
               <div className="shooters-shoot-pane-orient">
-                <p className="shooters-shoot-pane-center-name game-player-name pane-player-color">
+                <p className="shooters-shoot-pane-center-name game-player-name">
                   {player.name}
                 </p>
                 <p
@@ -127,7 +133,7 @@ export default function ShootersShootPaneGrid({
               </div>
             )}
             {mode === 'countdown' && (
-              <p className="shooters-shoot-pane-center-name game-player-name pane-player-color">
+              <p className="shooters-shoot-pane-center-name game-player-name">
                 {player.name}
               </p>
             )}

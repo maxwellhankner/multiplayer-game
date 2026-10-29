@@ -18,6 +18,8 @@ import {
   rejoinOrClaimPlayer,
   removeBot,
   returnToLobby,
+  restartMatch,
+  setRoomPaused,
   removePlayer,
   serializeRoom,
   setPlayerReady,
@@ -34,6 +36,8 @@ import {
   triggerShootersShootMelee,
   triggerShootersShootJump,
   triggerShootersShootReload,
+  triggerShootersShootSwap,
+  setShootersShootLoadout,
   setTrackWidth,
   submitScribbleDrawing,
   submitScribblePick,
@@ -405,6 +409,16 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('player:shooters-shoot-swap', () => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (triggerShootersShootSwap(room, socket.id)) {
+      broadcastRoomState(room);
+    }
+  });
+
   socket.on('player:balloon-input', (payload: unknown) => {
     const roomId = socketRoom.get(socket.id);
     if (!roomId) return;
@@ -478,6 +492,40 @@ io.on('connection', (socket) => {
     if (prepareLobbyReturn(room, socket.id)) {
       broadcastRoomState(room);
     }
+  });
+
+  socket.on('host:set-paused', (paused: boolean) => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    if (hostRooms.get(roomId) !== socket.id) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    setRoomPaused(room, paused === true);
+  });
+
+  socket.on('host:set-gun', (payload: unknown) => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    if (hostRooms.get(roomId) !== socket.id) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (!payload || typeof payload !== 'object') return;
+    const data = payload as { playerId?: unknown; slot?: unknown; gunId?: unknown };
+    const slot = data.slot === 0 || data.slot === 1 ? data.slot : null;
+    if (slot == null || typeof data.playerId !== 'string' || typeof data.gunId !== 'string') return;
+    if (setShootersShootLoadout(room, data.playerId, slot, data.gunId)) {
+      broadcastRoomState(room);
+    }
+  });
+
+  socket.on('host:restart-match', () => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    if (hostRooms.get(roomId) !== socket.id) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (!restartMatch(room)) return;
+    broadcastRoomState(room);
   });
 
   socket.on('game:return-lobby', () => {

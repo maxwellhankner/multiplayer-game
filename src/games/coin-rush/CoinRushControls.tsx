@@ -5,7 +5,6 @@ import VirtualJoystick from './VirtualJoystick';
 
 interface CoinRushControlsProps {
   playerName: string;
-  playerColor: string;
   score: number;
   winCoins: number;
   onInput: (input: CoinStickInput) => void;
@@ -18,7 +17,6 @@ const ZERO: CoinStickInput = { moveX: 0, moveY: 0, lookX: 0, lookY: 0 };
 
 export default function CoinRushControls({
   playerName,
-  playerColor,
   score,
   winCoins,
   onInput,
@@ -57,7 +55,7 @@ export default function CoinRushControls({
         </div>
       )}
       <div className="controller-game-hud">
-        <span className="game-player-name" style={{ color: playerColor }}>{playerName}</span>
+        <span className="game-player-name">{playerName}</span>
         <span className="controller-game-hud-muted">
           {score}/{winCoins}
         </span>

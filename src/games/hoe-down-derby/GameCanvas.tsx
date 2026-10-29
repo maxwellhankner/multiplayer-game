@@ -175,7 +175,6 @@ import { HOE_DOWN_PLAYER_NAME_FONT } from '../shared/playerNameFont';
 function drawPlayerLabel(
   ctx: CanvasRenderingContext2D,
   name: string,
-  color: string,
   lives: number,
   horseX: number,
   laneCenter: number,
@@ -213,7 +212,7 @@ function drawPlayerLabel(
   ctx.lineWidth = Math.max(1, 1.5 * scale);
   ctx.stroke();
 
-  ctx.fillStyle = color;
+  ctx.fillStyle = COLORS.navy;
   ctx.textAlign = 'left';
   ctx.fillText(displayName, plateX + padX, nameTextY);
 
@@ -306,7 +305,7 @@ export default function GameCanvas({ state }: GameCanvasProps) {
         const laneCenter = layout.laneCenterY(lane);
         const jumpH = getJumpHeightAtPhase(player.jumpPhase, player.isJumping);
 
-        drawPlayerLabel(ctx, player.name, player.color, player.lives, layout.horseX, laneCenter, scale);
+        drawPlayerLabel(ctx, player.name, player.lives, layout.horseX, laneCenter, scale);
 
         drawHorseAndRider(
           ctx,

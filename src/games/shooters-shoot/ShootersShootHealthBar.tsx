@@ -4,6 +4,7 @@ interface ShootersShootHealthBarProps {
   lives: number;
   maxLives?: number;
   className?: string;
+  color?: string;
 }
 
 function healthTier(lives: number, maxLives: number): 'high' | 'mid' | 'low' | 'empty' {
@@ -17,6 +18,7 @@ export default function ShootersShootHealthBar({
   lives,
   maxLives = SHOOTERS_SHOOT_MAX_HITS,
   className = '',
+  color,
 }: ShootersShootHealthBarProps) {
   const clamped = Math.max(0, Math.min(lives, maxLives));
   const hp = maxLives > 0 ? Math.round((clamped / maxLives) * 100) : 0;
@@ -30,6 +32,7 @@ export default function ShootersShootHealthBar({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-label={`Health ${hp}`}
+      style={color ? { ['--pane-color' as string]: color } : undefined}
     >
       <span className="shooters-shoot-health-label">HP</span>
       <div className="shooters-shoot-health-segments">

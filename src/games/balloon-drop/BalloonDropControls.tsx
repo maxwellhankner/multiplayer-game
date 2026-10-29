@@ -4,7 +4,6 @@ import MobileControllerCountdown from '../../components/mobile/MobileControllerC
 
 interface BalloonDropControlsProps {
   playerName: string;
-  playerColor: string;
   eliminated: boolean;
   solo: boolean;
   survivalMs: number;
@@ -15,7 +14,6 @@ interface BalloonDropControlsProps {
 
 export default function BalloonDropControls({
   playerName,
-  playerColor,
   eliminated,
   solo,
   survivalMs,
@@ -58,7 +56,7 @@ export default function BalloonDropControls({
         <MobileControllerCountdown count={countdown} hint={countdownHint} overlay />
       )}
       <div className="controller-game-hud">
-        <span className="game-player-name" style={{ color: playerColor }}>{playerName}</span>
+        <span className="game-player-name">{playerName}</span>
         {solo && (
           <span className="controller-game-hud-muted">{Math.floor(survivalMs / 1000)}s</span>
         )}

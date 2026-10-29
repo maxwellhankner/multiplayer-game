@@ -24,7 +24,7 @@
 .drunk-driver-pane {
   position: absolute;
   box-sizing: border-box;
-  border: clamp(6px, 0.9vw, 12px) solid var(--pane-color, #888);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   pointer-events: none;
   z-index: 5;
 }
@@ -63,6 +63,12 @@
   width: max-content;
   max-width: calc(100% - 16px);
   text-align: center;
+}
+
+.drunk-driver-pane-name,
+.drunk-driver-pane-score,
+.drunk-driver-pane-center-name {
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
 }
 
 .drunk-driver-pane-name {

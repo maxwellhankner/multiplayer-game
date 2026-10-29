@@ -1,7 +1,22 @@
+.shooters-shoot-match-status {
+  position: fixed;
+  top: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  pointer-events: none;
+  color: #fff;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  font-size: clamp(1rem, 2vw, 1.45rem);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.75);
+}
+
 .shooters-shoot-host {
   position: fixed;
   inset: 0;
-  background: #14181e;
+  background: #8fd4ff;
 }
 
 .shooters-shoot-host canvas {
@@ -13,7 +28,7 @@
 .shooters-shoot-pane {
   position: absolute;
   box-sizing: border-box;
-  border: clamp(6px, 0.9vw, 12px) solid var(--pane-color, #888);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   pointer-events: none;
   z-index: 2;
 }
@@ -24,7 +39,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--pane-color) 38%, #6b7f96);
+  background: #1c222a;
+}
+
+.shooters-shoot-pane--winner {
+  background: color-mix(in srgb, var(--pane-color) 38%, #1c222a);
 }
 
 .shooters-shoot-pane-orient {
@@ -229,18 +248,36 @@
   gap: 0.45rem;
   width: min(72vw, 280px);
   padding: 0.35rem 0.5rem 0.35rem 0.45rem;
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  border: 2px solid var(--pane-color, rgba(255, 255, 255, 0.28));
   border-radius: 6px;
   background: linear-gradient(180deg, rgba(12, 16, 20, 0.72), rgba(8, 10, 12, 0.55));
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
-.shooters-shoot-health--host {
+.shooters-shoot-status {
   position: absolute;
   left: 14px;
   bottom: 14px;
   z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.28rem;
   width: min(46%, 240px);
+}
+
+.shooters-shoot-health--host {
+  position: static;
+  width: 100%;
+}
+
+.shooters-shoot-kd {
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.65);
 }
 
 .shooters-shoot-health-label {
@@ -304,6 +341,19 @@
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.65);
 }
 
+.shooters-shoot-ammo-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.shooters-shoot-ammo-other {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+
 .shooters-shoot-ammo-key {
   display: inline-grid;
   place-items: center;
@@ -319,9 +369,10 @@
 }
 
 .shooters-shoot-ammo-count {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.7rem;
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
 .shooters-shoot-ammo-stack {
@@ -352,10 +403,8 @@
   opacity: 0.8;
 }
 
-.shooters-shoot-ammo--empty .shooters-shoot-ammo-mag,
-.shooters-shoot-ammo--empty .shooters-shoot-ammo-key {
+.shooters-shoot-ammo--empty .shooters-shoot-ammo-count {
   color: #ffb4a8;
-  border-color: #ffb4a8;
 }
 
 .shooters-shoot-reload {
@@ -374,7 +423,8 @@
 }
 
 .shooters-shoot-reload-track {
-  width: 100%;
+  display: block;
+  width: 7.5rem;
   height: 0.38rem;
   border-radius: 999px;
   overflow: hidden;

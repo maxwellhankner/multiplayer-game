@@ -13,7 +13,7 @@
 .coin-rush-pane {
   position: absolute;
   box-sizing: border-box;
-  border: clamp(6px, 0.9vw, 12px) solid var(--pane-color, #888);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   pointer-events: none;
   z-index: 2;
 }
@@ -24,7 +24,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--pane-color) 38%, #87b5d8);
+  background: #6f93b4;
+}
+
+.coin-rush-pane--winner {
+  background: color-mix(in srgb, var(--pane-color) 38%, #6f93b4);
 }
 
 .coin-rush-pane-orient {
@@ -106,6 +110,12 @@
   width: max-content;
   max-width: calc(100% - 16px);
   text-align: center;
+}
+
+.coin-rush-pane-name,
+.coin-rush-pane-score,
+.coin-rush-pane-center-name {
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
 }
 
 .coin-rush-pane-name {

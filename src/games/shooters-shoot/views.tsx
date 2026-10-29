@@ -1,6 +1,13 @@
 import { useCallback } from 'react';
 import { showsAsLandscapeReady } from '../../../shared/games/bots';
-import type { CoinStickInput } from '../../../shared/types';
+import {
+  normalizeShootersShootSettings,
+  shootersShootRespawns,
+  shootersShootRuleLabel,
+  shootersShootTimeLimitMs,
+} from '../../../shared/games/shooters-shoot/lobby';
+import { equippedGun } from '../../../shared/games/shooters-shoot/guns';
+import type { CoinStickInput, RoomState } from '../../../shared/types';
 import type { GameControllerProps, GameHostProps } from '../types';
 import GameCountdown from '../shared/GameCountdown';
 import RotatePhonePrompt from '../coin-rush/RotatePhonePrompt';
@@ -11,7 +18,25 @@ import ShootersShootHostCanvas from './ShootersShootHostCanvas';
 import ShootersShootOrient from './ShootersShootOrient';
 import ShootersShootWinner from './ShootersShootWinner';
 
+function formatClock(ms: number): string {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function ShootersShootMatchStatus({ state }: { state: RoomState }) {
+  if (state.phase !== 'countdown' && state.phase !== 'playing') return null;
+  const settings = normalizeShootersShootSettings(state.lobbySettings.shootersShoot);
+  const timeLimit = shootersShootTimeLimitMs(settings);
+  const label = timeLimit == null ? shootersShootRuleLabel(settings) : formatClock(timeLimit - state.gameTime);
+  if (settings.winMode === 'timed' && settings.timeLimitMin === 0) return null;
+
+  return <div className="shooters-shoot-match-status">{label}</div>;
+}
+
 export function ShootersShootHostView({ state }: GameHostProps) {
+  const rule = shootersShootRuleLabel(normalizeShootersShootSettings(state.lobbySettings.shootersShoot));
   const showGame =
     state.phase === 'orient' ||
     state.phase === 'countdown' ||
@@ -23,11 +48,12 @@ export function ShootersShootHostView({ state }: GameHostProps) {
   return (
     <>
       <ShootersShootHostCanvas state={state} />
+      <ShootersShootMatchStatus state={state} />
       {state.phase === 'orient' && <ShootersShootOrient />}
       {state.phase === 'countdown' && (
         <GameCountdown
           count={state.countdown > 0 ? state.countdown : 'GO!'}
-          hint="3 hits to kill · last standing wins"
+          hint={`3 hits to kill · ${rule}`}
         />
       )}
       {state.phase === 'winner' && <ShootersShootWinner state={state} />}
@@ -94,6 +120,7 @@ export function ShootersShootControllerView({
         hitsLeft={me.lives}
         bullets={me.bullets ?? 0}
         ammoReserve={me.ammoReserve ?? 0}
+        gunName={equippedGun(me).name}
         onInput={sendInput}
         onShoot={shoot}
         onMelee={melee}
@@ -105,11 +132,15 @@ export function ShootersShootControllerView({
   }
 
   if (state.phase === 'countdown' || state.phase === 'playing') {
+    const rules = normalizeShootersShootSettings(state.lobbySettings.shootersShoot);
     if (me.eliminated) {
+      const respawning = shootersShootRespawns(rules);
       return (
         <div className="controller-game-eliminated">
           <p className="controller-game-eliminated-title">You&apos;re dead</p>
-          <p className="controller-game-eliminated-detail">Watch the main screen</p>
+          <p className="controller-game-eliminated-detail">
+            {respawning ? 'Respawning' : 'Watch the main screen'}
+          </p>
         </div>
       );
     }
@@ -123,13 +154,14 @@ export function ShootersShootControllerView({
         hitsLeft={me.lives}
         bullets={me.bullets ?? 0}
         ammoReserve={me.ammoReserve ?? 0}
+        gunName={equippedGun(me).name}
         onInput={sendInput}
         onShoot={shoot}
         onMelee={melee}
         onJump={jump}
         onReload={reload}
         countdown={inCountdown ? (state.countdown > 0 ? state.countdown : 'GO!') : undefined}
-        countdownHint={inCountdown ? 'Eliminate the other players' : undefined}
+        countdownHint={inCountdown ? shootersShootRuleLabel(rules) : undefined}
       />
     );
   }

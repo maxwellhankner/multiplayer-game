@@ -1,3 +1,4 @@
+import { defaultShootersShootSettings, type ShootersShootLobbySettings } from './games/shooters-shoot/lobby.js';
 import { GAMES, getGameById, getGamesForSessionMode, getPlayableGamesForSessionMode } from './games/registry.js';
 import type { GameDefinition } from './games/types.js';
 import type { SessionMode } from './session.js';
@@ -20,6 +21,7 @@ export interface LobbySettings {
   gameSelectionMode: GameSelectionMode;
   specificGameId: string | null;
   gamePool: string[];
+  shootersShoot: ShootersShootLobbySettings;
 }
 
 export const PLATFORM_NAME = 'Multiplayer Browser Games';
@@ -47,6 +49,7 @@ export function getDefaultLobbySettings(sessionMode: SessionMode): LobbySettings
     gameSelectionMode: 'random-from-pool',
     specificGameId: playableIds[0] ?? null,
     gamePool: playableIds,
+    shootersShoot: defaultShootersShootSettings(),
   };
 }
 

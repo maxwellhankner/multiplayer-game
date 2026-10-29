@@ -65,7 +65,7 @@ export default function ShotsFiredControls({
       )}
       <div className="shots-fired-controller-top-hud">
         <span className="shots-fired-controller-name">{playerName}</span>
-        <ShotsFiredHealthBar lives={hitsLeft} className="shots-fired-health-bar--controller" />
+        <ShotsFiredHealthBar lives={hitsLeft} color={playerColor} className="shots-fired-health-bar--controller" />
         <span className="shots-fired-kills-line">Kills: {kills}</span>
       </div>
       <VirtualJoystick label="Move" className="shots-fired-move-joystick" onChange={setMove} />
@@ -95,7 +95,6 @@ export default function ShotsFiredControls({
         <button
           type="button"
           className="shots-fired-action-btn shots-fired-fire-btn"
-          style={{ backgroundColor: playerColor }}
           onPointerDown={(e) => {
             e.preventDefault();
             onShoot();

@@ -42,7 +42,6 @@ export function BalloonDropControllerView({ state, playerId, onBalloonInput }: G
     return (
       <BalloonDropControls
         playerName={me.name}
-        playerColor={me.color}
         eliminated={me.eliminated}
         solo={state.players.length === 1}
         survivalMs={state.gameTime}

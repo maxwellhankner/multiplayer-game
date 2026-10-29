@@ -16,6 +16,7 @@ export interface LocalSlotState {
   label: string;
   name: string;
   playerId: string | null;
+  gamepadIndex: number | null;
 }
 
 export interface LocalPadInfo {
@@ -33,6 +34,8 @@ interface UseLocalControllersOptions {
   activeGameId: string | null;
   phase: string;
   takenNames: readonly string[];
+  /** Equipped gun fire profile, keyed by player id. Shooters Shoot only. */
+  shooterFire?: Readonly<Record<string, { auto: boolean; fireMs: number }>>;
 }
 
 interface SlotEdge {
@@ -40,6 +43,7 @@ interface SlotEdge {
   shoot: boolean;
   melee: boolean;
   reload: boolean;
+  swap: boolean;
   jumpAt: number;
   shootAt: number;
   meleeAt: number;
@@ -66,7 +70,7 @@ function isFpsGame(gameId: string | null): boolean {
   return gameId === 'shots-fired' || gameId === 'shooters-shoot';
 }
 
-function fpsEvent(gameId: string, action: 'input' | 'shoot' | 'melee' | 'jump' | 'reload'): string {
+function fpsEvent(gameId: string, action: 'input' | 'shoot' | 'melee' | 'jump' | 'reload' | 'swap'): string {
   const prefix = gameId === 'shooters-shoot' ? 'player:shooters-shoot' : 'player:shots-fired';
   return `${prefix}-${action}`;
 }
@@ -127,11 +131,12 @@ function toPublic(slot: SlotInternal): LocalSlotState {
     label: slot.label,
     name: slot.name,
     playerId: slot.playerId,
+    gamepadIndex: slot.gamepadIndex,
   };
 }
 
 function freshEdge(): SlotEdge {
-  return { jump: false, shoot: false, melee: false, reload: false, jumpAt: 0, shootAt: 0, meleeAt: 0 };
+  return { jump: false, shoot: false, melee: false, reload: false, swap: false, jumpAt: 0, shootAt: 0, meleeAt: 0 };
 }
 
 export function useLocalControllers({
@@ -142,6 +147,7 @@ export function useLocalControllers({
   activeGameId,
   phase,
   takenNames,
+  shooterFire,
 }: UseLocalControllersOptions) {
   const slotsRef = useRef<SlotInternal[]>([]);
   const [slots, setSlots] = useState<LocalSlotState[]>([]);
@@ -160,7 +166,9 @@ export function useLocalControllers({
   const seenButtonsRef = useRef<Map<number, boolean[]>>(new Map());
   const keysRef = useRef(new Set<string>());
   const mouseRef = useRef({ dx: 0, dy: 0, left: false, right: false });
-  const latchRef = useRef({ jump: false, shoot: false, melee: false, reload: false });
+  const latchRef = useRef({ jump: false, shoot: false, melee: false, reload: false, swap: false });
+  const shooterFireRef = useRef(shooterFire);
+  shooterFireRef.current = shooterFire;
 
   enabledRef.current = enabled;
   suspendedRef.current = inputSuspended;
@@ -275,7 +283,10 @@ export function useLocalControllers({
       keysRef.current.add(event.code);
       if (event.code === 'Space') latchRef.current.jump = true;
       if (event.code === 'ArrowUp' && gameRef.current === 'hoe-down-derby') latchRef.current.jump = true;
-      if (event.code === 'KeyF' || event.code === 'KeyQ') latchRef.current.melee = true;
+      if (event.code === 'KeyF' || (event.code === 'KeyQ' && gameRef.current !== 'shooters-shoot')) {
+        latchRef.current.melee = true;
+      }
+      if (event.code === 'KeyQ' && gameRef.current === 'shooters-shoot') latchRef.current.swap = true;
       if (event.code === 'KeyX' && gameRef.current === 'shooters-shoot') latchRef.current.reload = true;
       const playing = phaseRef.current === 'countdown' || phaseRef.current === 'playing';
       const keyboardPlaying = playing && !suspendedRef.current && slotsRef.current.some((slot) => slot.kind === 'keyboard');
@@ -284,6 +295,7 @@ export function useLocalControllers({
         event.code === 'Space' ||
         event.code.startsWith('Arrow') ||
         event.code === 'KeyF' ||
+        event.code === 'KeyQ' ||
         event.code === 'KeyX' ||
         event.code === 'KeyC'
       ) {
@@ -380,7 +392,7 @@ export function useLocalControllers({
       if (suspended) {
         mouseRef.current.dx = 0;
         mouseRef.current.dy = 0;
-        latchRef.current = { jump: false, shoot: false, melee: false, reload: false };
+        latchRef.current = { jump: false, shoot: false, melee: false, reload: false, swap: false };
       }
       const latch = latchRef.current;
 
@@ -392,6 +404,7 @@ export function useLocalControllers({
               slot.socket.emit(fpsEvent(gameId, 'input'), ZERO_STICK);
               slot.wasSending = false;
             }
+            rememberHeldButtons(slot, gamepads, gameId, keysRef.current);
             continue;
           }
           const frame = readSlotFrame(slot, gamepads, gameId, keysRef.current, mouseRef.current, latch);
@@ -405,6 +418,9 @@ export function useLocalControllers({
             sprint: frame.sprint,
             crouch: frame.crouch,
           });
+          const fireProfile = gameId === 'shooters-shoot' && slot.playerId
+            ? shooterFireRef.current?.[slot.playerId] ?? { auto: true, fireMs: 110 }
+            : undefined;
           emitHeld(slot, now, frame, {
             shoot: () => slot.socket.emit(fpsEvent(gameId, 'shoot')),
             melee: () => slot.socket.emit(fpsEvent(gameId, 'melee')),
@@ -412,7 +428,10 @@ export function useLocalControllers({
             reload: gameId === 'shooters-shoot'
               ? () => slot.socket.emit(fpsEvent(gameId, 'reload'))
               : undefined,
-          });
+            swap: gameId === 'shooters-shoot'
+              ? () => slot.socket.emit(fpsEvent(gameId, 'swap'))
+              : undefined,
+          }, fireProfile);
           slot.wasSending = true;
         } else if (gameId === 'hoe-down-derby') {
           if (suspended) {
@@ -427,7 +446,7 @@ export function useLocalControllers({
           });
         }
       }
-      latchRef.current = { jump: false, shoot: false, melee: false, reload: false };
+      latchRef.current = { jump: false, shoot: false, melee: false, reload: false, swap: false };
     };
     raf = requestAnimationFrame(tick);
 
@@ -485,6 +504,7 @@ interface SlotFrame {
   sprint: boolean;
   crouch: boolean;
   reload: boolean;
+  swap: boolean;
 }
 
 const STILL_FRAME: SlotFrame = {
@@ -500,7 +520,32 @@ const STILL_FRAME: SlotFrame = {
   sprint: false,
   crouch: false,
   reload: false,
+  swap: false,
 };
+
+function rememberHeldButtons(
+  slot: SlotInternal,
+  gamepads: ArrayLike<Gamepad | null>,
+  gameId: string | null,
+  keys: Set<string>,
+) {
+  const shooters = gameId === 'shooters-shoot';
+  if (slot.kind === 'gamepad' && slot.gamepadIndex != null) {
+    const pad = gamepads[slot.gamepadIndex];
+    if (!pad) return;
+    slot.edge.jump = buttonDown(pad, 0);
+    slot.edge.shoot = buttonDown(pad, 7) || buttonDown(pad, 5);
+    slot.edge.melee = shooters ? buttonDown(pad, 11) : buttonDown(pad, 2);
+    slot.edge.reload = shooters && buttonDown(pad, 2);
+    slot.edge.swap = shooters && buttonDown(pad, 3);
+    return;
+  }
+  slot.edge.jump = keys.has('Space');
+  slot.edge.shoot = false;
+  slot.edge.melee = keys.has('KeyF') || (!shooters && keys.has('KeyQ'));
+  slot.edge.reload = shooters && keys.has('KeyX');
+  slot.edge.swap = shooters && keys.has('KeyQ');
+}
 
 function readSlotFrame(
   slot: SlotInternal,
@@ -508,7 +553,7 @@ function readSlotFrame(
   gameId: string,
   keys: Set<string>,
   mouse: { dx: number; dy: number; left: boolean; right: boolean },
-  latch: { jump: boolean; shoot: boolean; melee: boolean; reload: boolean },
+  latch: { jump: boolean; shoot: boolean; melee: boolean; reload: boolean; swap: boolean },
 ): SlotFrame {
   const shooters = gameId === 'shooters-shoot';
   if (slot.kind === 'gamepad' && slot.gamepadIndex != null) {
@@ -528,7 +573,7 @@ function readSlotFrame(
       ? [0, 1, 2, 3, 5, 7, 12].some((index) => buttonDown(pad, index))
       : buttonDown(pad, 0);
     const shoot = buttonDown(pad, 7) || buttonDown(pad, 5);
-    const melee = shooters ? buttonDown(pad, 3) : buttonDown(pad, 2);
+    const melee = shooters ? buttonDown(pad, 11) : buttonDown(pad, 2);
     return {
       moveX,
       moveY,
@@ -542,6 +587,7 @@ function readSlotFrame(
       sprint: shooters && buttonDown(pad, 10),
       crouch: shooters && buttonDown(pad, 1),
       reload: shooters && buttonDown(pad, 2),
+      swap: shooters && buttonDown(pad, 3),
     };
   }
 
@@ -564,10 +610,11 @@ function readSlotFrame(
     lookDY,
     jump,
     shoot: mouse.left || latch.shoot,
-    melee: mouse.right || keys.has('KeyF') || keys.has('KeyQ') || latch.melee,
+    melee: mouse.right || keys.has('KeyF') || (!shooters && keys.has('KeyQ')) || latch.melee,
     sprint: shooters && (keys.has('ShiftLeft') || keys.has('ShiftRight')),
     crouch: shooters && (keys.has('ControlLeft') || keys.has('ControlRight') || keys.has('KeyC')),
     reload: shooters && (keys.has('KeyX') || latch.reload),
+    swap: shooters && (keys.has('KeyQ') || latch.swap),
   };
 }
 
@@ -575,9 +622,11 @@ function emitHeld(
   slot: SlotInternal,
   now: number,
   frame: SlotFrame,
-  emit: { shoot: () => void; melee: () => void; jump: () => void; reload?: () => void },
+  emit: { shoot: () => void; melee: () => void; jump: () => void; reload?: () => void; swap?: () => void },
+  fire?: { auto: boolean; fireMs: number },
 ) {
-  if (frame.shoot && (!slot.edge.shoot || now - slot.edge.shootAt > 120)) {
+  const repeatMs = fire ? (fire.auto ? fire.fireMs : Number.POSITIVE_INFINITY) : 120;
+  if (frame.shoot && (!slot.edge.shoot || now - slot.edge.shootAt > repeatMs)) {
     emit.shoot();
     slot.edge.shootAt = now;
   }
@@ -590,8 +639,10 @@ function emitHeld(
     slot.edge.jumpAt = now;
   }
   if (frame.reload && !slot.edge.reload) emit.reload?.();
+  if (frame.swap && !slot.edge.swap) emit.swap?.();
   slot.edge.shoot = frame.shoot;
   slot.edge.melee = frame.melee;
   slot.edge.jump = frame.jump;
   slot.edge.reload = frame.reload;
+  slot.edge.swap = frame.swap;
 }

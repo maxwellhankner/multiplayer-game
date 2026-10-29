@@ -6,12 +6,26 @@ export interface SplitPane {
   height: number;
 }
 
+export interface SplitPaneOptions {
+  /**
+   * Two players sit side by side. Each pane keeps the screen's aspect ratio,
+   * so the pair is letterboxed with equal blank space above and below.
+   */
+  preserveAspect?: boolean;
+}
+
 /** Split-screen layout for 1–8 players on the host display. */
-export function getSplitPanes(playerCount: number): SplitPane[] {
+export function getSplitPanes(playerCount: number, options?: SplitPaneOptions): SplitPane[] {
   const n = Math.max(0, Math.min(playerCount, 8));
   if (n === 0) return [];
   if (n === 1) return [{ left: 0, top: 0, width: 1, height: 1 }];
   if (n === 2) {
+    if (options?.preserveAspect) {
+      return [
+        { left: 0, top: 0.25, width: 0.5, height: 0.5 },
+        { left: 0.5, top: 0.25, width: 0.5, height: 0.5 },
+      ];
+    }
     return [
       { left: 0, top: 0, width: 1, height: 0.5 },
       { left: 0, top: 0.5, width: 1, height: 0.5 },

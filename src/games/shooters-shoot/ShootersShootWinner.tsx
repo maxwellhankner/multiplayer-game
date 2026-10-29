@@ -19,7 +19,7 @@ export default function ShootersShootWinner({ state }: ShootersShootWinnerProps)
       stat={stat}
       players={state.players}
       winnerIds={winner ? new Set([winner.id]) : undefined}
-      hint={state.sessionMode === 'local-controllers' ? 'Open Players to change controllers. Home returns to setup.' : undefined}
+      hint={state.sessionMode === 'local-controllers' ? 'Start opens the match menu.' : undefined}
     />
   );
 }

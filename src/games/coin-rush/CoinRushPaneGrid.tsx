@@ -41,10 +41,10 @@ export default function CoinRushPaneGrid({
           >
             {mode === 'play' && (
               <div className="coin-rush-pane-play-body">
-                <span className="coin-rush-pane-name game-player-name pane-player-color">
+                <span className="coin-rush-pane-name game-player-name">
                   {player.name}
                 </span>
-                <span className="coin-rush-pane-score pane-player-color">
+                <span className="coin-rush-pane-score">
                   {player.score}/{winCoins}
                 </span>
               </div>
@@ -52,7 +52,7 @@ export default function CoinRushPaneGrid({
 
             {mode === 'orient' && (
               <div className="coin-rush-pane-orient">
-                <p className="coin-rush-pane-center-name game-player-name pane-player-color">
+                <p className="coin-rush-pane-center-name game-player-name">
                   {player.name}
                 </p>
                 <p
@@ -68,7 +68,7 @@ export default function CoinRushPaneGrid({
             )}
 
             {mode === 'countdown' && (
-              <p className="coin-rush-pane-center-name game-player-name pane-player-color">
+              <p className="coin-rush-pane-center-name game-player-name">
                 {player.name}
               </p>
             )}

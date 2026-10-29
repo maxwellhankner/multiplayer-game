@@ -6,7 +6,6 @@ import SteerPad from './SteerPad';
 
 interface DrunkDriverControlsProps {
   playerName: string;
-  playerColor: string;
   progressPct: number;
   onInput: (input: DrunkDriverInput) => void;
   startLight?: boolean;
@@ -18,7 +17,6 @@ const ZERO: DrunkDriverInput = { gas: false, steer: 0 };
 
 export default function DrunkDriverControls({
   playerName,
-  playerColor,
   progressPct,
   onInput,
   startLight = false,
@@ -58,7 +56,7 @@ export default function DrunkDriverControls({
         </div>
       )}
       <div className="controller-game-hud">
-        <span className="game-player-name" style={{ color: playerColor }}>{playerName}</span>
+        <span className="game-player-name">{playerName}</span>
         <span className="controller-game-hud-muted">{progressPct}%</span>
       </div>
       <button
