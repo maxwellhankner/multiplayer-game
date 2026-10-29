@@ -29,6 +29,11 @@ import {
   triggerShotsFiredShoot,
   triggerShotsFiredMelee,
   triggerShotsFiredJump,
+  setPlayerShootersShootInput,
+  triggerShootersShootShoot,
+  triggerShootersShootMelee,
+  triggerShootersShootJump,
+  triggerShootersShootReload,
   setTrackWidth,
   submitScribbleDrawing,
   submitScribblePick,
@@ -330,6 +335,72 @@ io.on('connection', (socket) => {
     const room = getRoom(roomId);
     if (!room) return;
     if (triggerShotsFiredMelee(room, socket.id)) {
+      broadcastRoomState(room);
+    }
+  });
+
+  socket.on('player:shooters-shoot-input', (payload: unknown) => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (!payload || typeof payload !== 'object') return;
+    const data = payload as Record<string, unknown>;
+    const finite = (value: unknown) => {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : 0;
+    };
+    const input = {
+      moveX: finite(data.moveX),
+      moveY: finite(data.moveY),
+      lookX: finite(data.lookX),
+      lookY: finite(data.lookY),
+      lookDX: finite(data.lookDX),
+      lookDY: finite(data.lookDY),
+    };
+    setPlayerShootersShootInput(room, socket.id, {
+      ...input,
+      sprint: data.sprint === true,
+      crouch: data.crouch === true,
+    });
+  });
+
+  socket.on('player:shooters-shoot-shoot', () => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (triggerShootersShootShoot(room, socket.id)) {
+      broadcastRoomState(room);
+    }
+  });
+
+  socket.on('player:shooters-shoot-jump', () => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (triggerShootersShootJump(room, socket.id)) {
+      broadcastRoomState(room);
+    }
+  });
+
+  socket.on('player:shooters-shoot-melee', () => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (triggerShootersShootMelee(room, socket.id)) {
+      broadcastRoomState(room);
+    }
+  });
+
+  socket.on('player:shooters-shoot-reload', () => {
+    const roomId = socketRoom.get(socket.id);
+    if (!roomId) return;
+    const room = getRoom(roomId);
+    if (!room) return;
+    if (triggerShootersShootReload(room, socket.id)) {
       broadcastRoomState(room);
     }
   });

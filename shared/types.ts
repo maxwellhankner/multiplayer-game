@@ -30,6 +30,10 @@ export type CoinStickInput = {
    */
   lookDX?: number;
   lookDY?: number;
+  /** Shooters Shoot — held sprint */
+  sprint?: boolean;
+  /** Shooters Shoot — held crouch */
+  crouch?: boolean;
 };
 
 export type DrunkDriverInput = {
@@ -95,8 +99,16 @@ export interface PlayerState {
   py: number;
   yaw: number;
   pitch: number;
-  /** Shots Fired — bullets remaining in magazine */
+  /** Shots Fired / Shooters Shoot — rounds left in the gun */
   bullets: number;
+  /** Shooters Shoot — rounds carried on the body */
+  ammoReserve?: number;
+  /** Shooters Shoot — crouch is held */
+  crouching?: boolean;
+  /** Shooters Shoot — sprint is active */
+  sprinting?: boolean;
+  /** Shooters Shoot — gameTime when the current reload finishes; 0 if idle */
+  reloadUntil?: number;
   /** Shots Fired — gameTime when this player last melee'd (for view animation) */
   lastMeleeAt?: number;
 }

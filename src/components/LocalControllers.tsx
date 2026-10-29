@@ -3,13 +3,26 @@ import { getResetLobbySettings } from '../../shared/platform';
 import { isBot } from '../../shared/games/bots';
 import { MAX_PLAYERS } from '../../shared/constants';
 import { getLobbyGameDefinition, getPlayableGamesForSessionMode } from '../../shared/games/registry';
-import { getSessionModeLabel } from '../../shared/session';
+import { getSessionModeInfo, getSessionModeLabel } from '../../shared/session';
 import type { RoomState } from '../../shared/types';
 import LobbySettingsPanel from './LobbySettingsPanel';
 import PlayerWinBadge from './PlayerWinBadge';
 import type { LocalPadInfo, LocalSlotState } from '../local/useLocalControllers';
 
 const CONTROL_COPY: Record<string, { title: string; lines: string[] }> = {
+  'shooters-shoot': {
+    title: 'Shooters Shoot',
+    lines: [
+      'Move — left stick, or WASD',
+      'Look — right stick, or mouse',
+      'Sprint — click left stick, or Shift',
+      'Crouch — Circle / B, or Ctrl',
+      'Shoot — R2 / RT, or left click',
+      'Reload — Square / X, or the X key',
+      'Melee — Triangle / Y, or right click',
+      'Jump — Cross / A, or Space',
+    ],
+  },
   'shots-fired': {
     title: 'Shots Fired',
     lines: [
@@ -45,6 +58,7 @@ interface LocalPlayerPanelProps {
   onRemoveSlot: (slotId: string) => void;
   onAddBot?: () => void;
   onRemoveBot?: (botId: string) => void;
+  showLegend?: boolean;
 }
 
 export function LocalPlayerPanel({
@@ -57,6 +71,7 @@ export function LocalPlayerPanel({
   onRemoveSlot,
   onAddBot,
   onRemoveBot,
+  showLegend = true,
 }: LocalPlayerPanelProps) {
   const bots = state.players.filter((player) => isBot(player.id));
   const gameDef = getLobbyGameDefinition(state.sessionMode, state.lobbySettings.specificGameId);
@@ -138,7 +153,7 @@ export function LocalPlayerPanel({
           Plug in a controller and press any button. PlayStation, Xbox, and most other gamepads work. One player can use the keyboard and mouse.
         </p>
       )}
-      {legends.length > 0 && (
+      {showLegend && legends.length > 0 && (
         <div className="local-control-legend">
           {legends.map((legend) => (
             <div key={legend.title}>
@@ -196,22 +211,43 @@ export function LocalControllerLobby({
     else onStartBotsOnly();
   };
 
+  const modeInfo = getSessionModeInfo(state.sessionMode);
+  const legends = legendGameIds(state).map((id) => CONTROL_COPY[id]).filter((entry) => entry != null);
+
   return (
-    <div className="lobby lobby--local">
-      <div className="lobby-layout lobby-layout--local">
-        <div className="panel lobby-panel">
+    <div className="lobby">
+      <div className="lobby-layout">
+        <div className="panel lobby-panel lobby-panel--lobby">
           <div className="lobby-panel-header">
             <h1>{getSessionModeLabel(state.sessionMode)}</h1>
             <button type="button" className="lobby-panel-btn" onClick={onExit}>
               Exit
             </button>
           </div>
+          {modeInfo && <p className="lobby-session-mode">{modeInfo.description}</p>}
+          {legends.length > 0 && (
+            <div className="local-control-legend">
+              {legends.map((legend) => (
+                <div key={legend.title}>
+                  <h2>{legend.title}</h2>
+                  <ul>
+                    {legend.lines.map((line) => (
+                      <li key={line}>{line}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="panel lobby-panel lobby-panel--players">
           <LocalPlayerPanel
             state={state}
             slots={slots}
             unassignedPads={unassignedPads}
             notice={notice}
             showBots
+            showLegend={false}
             onAddKeyboard={onAddKeyboard}
             onRemoveSlot={onRemoveSlot}
             onAddBot={onAddBot}
@@ -225,7 +261,7 @@ export function LocalControllerLobby({
             onChange={onUpdateSettings}
             onReset={() => onUpdateSettings(getResetLobbySettings(state.sessionMode))}
           />
-          <button type="button" className={`btn ${canStart ? 'btn-primary' : 'btn-secondary'}`} disabled={!canStart} onClick={handleStart}>
+          <button type="button" className={`btn local-start-btn ${canStart ? 'btn-primary' : 'btn-secondary'}`} disabled={!canStart} onClick={handleStart}>
             Start game
           </button>
           {!canStart && (

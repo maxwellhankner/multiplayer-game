@@ -4,6 +4,7 @@ import type { GameClientModule, GameControllerProps, GameHostProps } from './typ
 import PlaceholderView from './placeholder/PlaceholderView';
 import { balloonDropClient } from './balloon-drop/client';
 import { drunkDriverClient } from './drunk-driver/client';
+import { shootersShootClient } from './shooters-shoot/client';
 import { shotsFiredClient } from './shots-fired/client';
 import { coinRushClient } from './coin-rush/client';
 import { hoeDownDerbyClient } from './hoe-down-derby/client';
@@ -35,6 +36,7 @@ const placeholderModules = GAMES.filter((g) => g.status === 'placeholder').map((
 );
 
 const MODULES: GameClientModule[] = [
+  shootersShootClient,
   shotsFiredClient,
   drunkDriverClient,
   scribbleTimeClient,

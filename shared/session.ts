@@ -11,26 +11,22 @@ export const SESSION_MODES: SessionModeInfo[] = [
   {
     id: 'local-controllers',
     title: 'PC Host with Controllers',
-    description:
-      'This computer shows the game. Players use gamepads — PlayStation, Xbox, or other controllers — or one keyboard and mouse.',
+    description: 'This screen shows the game. Controllers or a keyboard.',
   },
   {
     id: 'pc-host',
     title: 'PC Host with Mobile Devices',
-    description:
-      'One computer shows the game on a big screen. Phones join as controllers — best in person on the same Wi‑Fi or local network.',
+    description: 'This screen shows the game. Phones are the controllers.',
   },
   {
     id: 'mobile-only',
     title: 'Mobile Devices Only',
-    description:
-      'No PC. Every player uses their phone for the game and controls — works on cellular or any network, together or apart.',
+    description: 'Each player uses a phone for both the game and controls.',
   },
   {
     id: 'personal-computers',
     title: 'Personal Computers',
-    description:
-      'Everyone plays on their own computer with a full screen — join over the internet from separate locations.',
+    description: 'Each player uses their own computer with a full screen.',
   },
 ];
 

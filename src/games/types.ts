@@ -14,6 +14,11 @@ export interface GameControllerProps {
   onShotsFiredShoot?: () => void;
   onShotsFiredMelee?: () => void;
   onShotsFiredJump?: () => void;
+  onShootersShootInput?: (input: CoinStickInput) => void;
+  onShootersShootShoot?: () => void;
+  onShootersShootMelee?: () => void;
+  onShootersShootJump?: () => void;
+  onShootersShootReload?: () => void;
   onBalloonInput?: (input: BalloonInput) => void;
   onDrunkInput?: (input: DrunkDriverInput) => void;
   onScribblePrompt?: (prompt: string) => void;

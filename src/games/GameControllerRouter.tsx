@@ -10,6 +10,11 @@ interface GameControllerRouterProps {
   onShotsFiredShoot: () => void;
   onShotsFiredMelee: () => void;
   onShotsFiredJump: () => void;
+  onShootersShootInput: (input: CoinStickInput) => void;
+  onShootersShootShoot: () => void;
+  onShootersShootMelee: () => void;
+  onShootersShootJump: () => void;
+  onShootersShootReload: () => void;
   onBalloonInput: (input: BalloonInput) => void;
   onDrunkInput: (input: DrunkDriverInput) => void;
   onScribblePrompt: (prompt: string) => void;
@@ -27,6 +32,11 @@ export default function GameControllerRouter({
   onShotsFiredShoot,
   onShotsFiredMelee,
   onShotsFiredJump,
+  onShootersShootInput,
+  onShootersShootShoot,
+  onShootersShootMelee,
+  onShootersShootJump,
+  onShootersShootReload,
   onBalloonInput,
   onDrunkInput,
   onScribblePrompt,
@@ -56,6 +66,11 @@ export default function GameControllerRouter({
           onShotsFiredShoot={onShotsFiredShoot}
           onShotsFiredMelee={onShotsFiredMelee}
           onShotsFiredJump={onShotsFiredJump}
+          onShootersShootInput={onShootersShootInput}
+          onShootersShootShoot={onShootersShootShoot}
+          onShootersShootMelee={onShootersShootMelee}
+          onShootersShootJump={onShootersShootJump}
+          onShootersShootReload={onShootersShootReload}
           onBalloonInput={onBalloonInput}
           onDrunkInput={onDrunkInput}
           onScribblePrompt={onScribblePrompt}

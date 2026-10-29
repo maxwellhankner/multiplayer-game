@@ -18,6 +18,17 @@ import {
   spawnShotsFiredPlayer,
   tickShotsFired,
 } from './games/shots-fired/gameplay.js';
+import {
+  checkShootersShootWinner,
+  fireShootersShootShot,
+  initShootersShoot,
+  jumpShootersShoot,
+  meleeShootersShootAttack,
+  reloadShootersShoot,
+  setShootersShootInput,
+  spawnShootersShootPlayer,
+  tickShootersShoot,
+} from './games/shooters-shoot/gameplay.js';
 import { initBalloonDrop, setBalloonInput, tickBalloonDrop } from './games/balloon-drop/gameplay.js';
 import { clearBalloonDropBots } from './games/balloon-drop/module.js';
 import {
@@ -52,8 +63,36 @@ const SCROLL_SPEED = 5;
 const DEFAULT_TRACK_WIDTH = 1200;
 const COUNTDOWN_SECONDS = 3;
 
+function fpsApi(gameId: string | null) {
+  if (gameId === 'shooters-shoot') {
+    return {
+      init: initShootersShoot,
+      tick: tickShootersShoot,
+      spawn: spawnShootersShootPlayer,
+      checkWinner: checkShootersShootWinner,
+      setInput: setShootersShootInput,
+      fire: fireShootersShootShot,
+      melee: meleeShootersShootAttack,
+      jump: jumpShootersShoot,
+    };
+  }
+  if (gameId === 'shots-fired') {
+    return {
+      init: initShotsFired,
+      tick: tickShotsFired,
+      spawn: spawnShotsFiredPlayer,
+      checkWinner: checkShotsFiredWinner,
+      setInput: setShotsFiredInput,
+      fire: fireShotsFiredShot,
+      melee: meleeShotsFiredAttack,
+      jump: jumpShotsFired,
+    };
+  }
+  return null;
+}
+
 function gameUsesOrientPhase(gameId: string | null): boolean {
-  return gameId === 'coin-rush' || gameId === 'drunk-driver' || gameId === 'shots-fired';
+  return gameId === 'coin-rush' || gameId === 'drunk-driver' || fpsApi(gameId) != null;
 }
 
 interface Room {
@@ -68,6 +107,7 @@ interface Room {
   balloons: BalloonState[];
   coinInputs: Map<string, CoinStickInput>;
   shotsFiredInputs: Map<string, CoinStickInput>;
+  shootersShootInputs: Map<string, CoinStickInput>;
   shotTracers: ShotTracerState[];
   shotImpacts: ShotImpactState[];
   nextTracerId: number;
@@ -113,6 +153,7 @@ function buildEmptyRoom(id: string, sessionMode: SessionMode): Room {
     balloons: [],
     coinInputs: new Map(),
     shotsFiredInputs: new Map(),
+    shootersShootInputs: new Map(),
     shotTracers: [],
     shotImpacts: [],
     nextTracerId: 1,
@@ -328,6 +369,7 @@ export function importDevRoomSnapshots(snapshots: DevRoomSnapshot[]): void {
       balloons: [],
       coinInputs: new Map(),
       shotsFiredInputs: new Map(),
+      shootersShootInputs: new Map(),
       shotTracers: [],
       shotImpacts: [],
       nextTracerId: 1,
@@ -398,6 +440,7 @@ export function rejoinPlayer(
   room.players.delete(oldPlayerId);
   room.coinInputs.delete(oldPlayerId);
   room.shotsFiredInputs.delete(oldPlayerId);
+  room.shootersShootInputs.delete(oldPlayerId);
   room.lastFireAt.delete(oldPlayerId);
   room.lastMeleeAt.delete(oldPlayerId);
   room.balloonInputs.delete(oldPlayerId);
@@ -466,8 +509,9 @@ export function addPlayer(
   room.players.set(socketId, player);
   reindexLanes(room);
   if (localRoom && (room.phase === 'playing' || room.phase === 'countdown')) {
-    if (room.activeGameId === 'shots-fired') {
-      spawnShotsFiredPlayer(room, player);
+    const fps = fpsApi(room.activeGameId);
+    if (fps) {
+      fps.spawn(room, player);
     } else if (room.activeGameId === 'hoe-down-derby') {
       player.lives = MAX_LIVES;
       player.eliminated = false;
@@ -484,6 +528,7 @@ export function removePlayer(room: Room, socketId: string): void {
   room.players.delete(socketId);
   room.coinInputs.delete(socketId);
   room.shotsFiredInputs.delete(socketId);
+  room.shootersShootInputs.delete(socketId);
   room.lastFireAt.delete(socketId);
   room.lastMeleeAt.delete(socketId);
   room.balloonInputs.delete(socketId);
@@ -494,7 +539,8 @@ export function removePlayer(room: Room, socketId: string): void {
     tryBeginCountdown(room);
   }
   if (room.phase === 'playing' || room.phase === 'countdown') {
-    if (room.activeGameId === 'shots-fired') checkShotsFiredWinner(room);
+    const fps = fpsApi(room.activeGameId);
+    if (fps) fps.checkWinner(room);
     else if (room.activeGameId === 'hoe-down-derby') checkWinner(room);
   }
 }
@@ -547,7 +593,7 @@ function beginRace(room: Room): void {
 
   room.activeGameId = gameId;
   const isCoinRush = gameId === 'coin-rush';
-  const isShotsFired = gameId === 'shots-fired';
+  const fps = fpsApi(gameId);
   const isDrunkDriver = gameId === 'drunk-driver';
   const isOrientGame = gameUsesOrientPhase(gameId);
   const skipOrient = room.sessionMode === 'local-controllers';
@@ -566,8 +612,8 @@ function beginRace(room: Room): void {
     clearCoinRushBots();
     initCoinRush(room);
   }
-  if (isShotsFired) {
-    initShotsFired(room);
+  if (fps) {
+    fps.init(room);
   }
   if (isDrunkDriver) {
     clearDrunkDriverBots();
@@ -588,7 +634,7 @@ function beginRace(room: Room): void {
   for (const p of room.players.values()) {
     p.ready = false;
     p.landscapeReady = isBot(p.id) || room.sessionMode === 'local-controllers';
-    if (!isCoinRush && !isShotsFired && !isBalloonDrop && !isScribbleTime && !isDrunkDriver) {
+    if (!isCoinRush && !fps && !isBalloonDrop && !isScribbleTime && !isDrunkDriver) {
       p.lives = MAX_LIVES;
       p.eliminated = false;
       p.jumpPhase = 0;
@@ -772,6 +818,32 @@ export function triggerShotsFiredJump(room: Room, socketId: string): boolean {
   return jumpShotsFired(room, socketId);
 }
 
+export function setPlayerShootersShootInput(room: Room, socketId: string, input: CoinStickInput): boolean {
+  if (room.activeGameId !== 'shooters-shoot') return false;
+  if (room.phase !== 'playing' && room.phase !== 'countdown') return false;
+  return setShootersShootInput(room, socketId, input);
+}
+
+export function triggerShootersShootShoot(room: Room, socketId: string): boolean {
+  if (room.activeGameId !== 'shooters-shoot') return false;
+  return fireShootersShootShot(room, socketId, Date.now());
+}
+
+export function triggerShootersShootMelee(room: Room, socketId: string): boolean {
+  if (room.activeGameId !== 'shooters-shoot') return false;
+  return meleeShootersShootAttack(room, socketId, Date.now());
+}
+
+export function triggerShootersShootJump(room: Room, socketId: string): boolean {
+  if (room.activeGameId !== 'shooters-shoot') return false;
+  return jumpShootersShoot(room, socketId);
+}
+
+export function triggerShootersShootReload(room: Room, socketId: string): boolean {
+  if (room.activeGameId !== 'shooters-shoot') return false;
+  return reloadShootersShoot(room, socketId);
+}
+
 export function setPlayerBalloonInput(room: Room, socketId: string, input: BalloonInput): boolean {
   if (room.activeGameId !== 'balloon-drop') return false;
   if (room.phase !== 'playing' && room.phase !== 'countdown') return false;
@@ -819,6 +891,7 @@ function resetRoomToLobby(room: Room): void {
   room.balloons = [];
   room.coinInputs.clear();
   room.shotsFiredInputs.clear();
+  room.shootersShootInputs.clear();
   room.shotTracers = [];
   room.shotImpacts = [];
   room.nextTracerId = 1;
@@ -899,6 +972,18 @@ function runGameBotTick(room: Room, dt: number): void {
     triggerShotsFiredMelee: (playerId) => {
       meleeShotsFiredAttack(room, playerId, Date.now());
     },
+    setShootersShootInput: (playerId, input) => {
+      setShootersShootInput(room, playerId, input);
+    },
+    triggerShootersShootShoot: (playerId) => {
+      fireShootersShootShot(room, playerId, Date.now());
+    },
+    triggerShootersShootMelee: (playerId) => {
+      meleeShootersShootAttack(room, playerId, Date.now());
+    },
+    triggerShootersShootReload: (playerId) => {
+      reloadShootersShoot(room, playerId);
+    },
     setBalloonInput: (playerId, input) => {
       setBalloonInput(room, playerId, input);
     },
@@ -938,8 +1023,9 @@ export function tickRoom(room: Room, dt: number): void {
       return;
     }
 
-    if (room.activeGameId === 'shots-fired') {
-      tickShotsFired(room, dt, now);
+    const fps = fpsApi(room.activeGameId);
+    if (fps) {
+      fps.tick(room, dt, now);
       runGameBotTick(room, dt);
       return;
     }

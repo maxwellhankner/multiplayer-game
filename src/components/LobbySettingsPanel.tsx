@@ -42,10 +42,11 @@ export default function LobbySettingsPanel({
     settings.gameSelectionMode === 'random-from-pool' || settings.gameSelectionMode === 'random';
   const isSelectedMode = settings.gameSelectionMode === 'specific';
 
-  const randomPoolIds =
+  const storedPool =
     settings.gameSelectionMode === 'random'
       ? playableIds
       : settings.gamePool.filter((id) => playableIds.includes(id));
+  const randomPoolIds = storedPool.length > 0 ? storedPool : playableIds;
 
   const selectedGameId =
     settings.specificGameId ?? playableGames[0]?.id ?? '';

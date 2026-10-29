@@ -18,6 +18,10 @@ export interface BotTickContext {
   setShotsFiredInput?: (playerId: string, input: import('../../shared/types.js').CoinStickInput) => void;
   triggerShotsFiredShoot?: (playerId: string) => void;
   triggerShotsFiredMelee?: (playerId: string) => void;
+  setShootersShootInput?: (playerId: string, input: import('../../shared/types.js').CoinStickInput) => void;
+  triggerShootersShootShoot?: (playerId: string) => void;
+  triggerShootersShootMelee?: (playerId: string) => void;
+  triggerShootersShootReload?: (playerId: string) => void;
   setBalloonInput?: (playerId: string, input: BalloonInput) => void;
   setDrunkInput?: (playerId: string, input: import('../../shared/types.js').DrunkDriverInput) => void;
   getHorseScreenX: (trackWidth: number) => number;

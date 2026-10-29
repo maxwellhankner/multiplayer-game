@@ -177,7 +177,7 @@ export default function HostRoomPage() {
   const wantsMouse =
     isLocal &&
     local.hasKeyboard &&
-    state.activeGameId === 'shots-fired' &&
+    (state.activeGameId === 'shots-fired' || state.activeGameId === 'shooters-shoot') &&
     (state.phase === 'countdown' || state.phase === 'playing') &&
     !playersOpen &&
     !local.pointerLocked;

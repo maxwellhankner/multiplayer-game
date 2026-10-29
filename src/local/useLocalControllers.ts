@@ -4,6 +4,10 @@ import {
   SHOTS_FIRED_LOOK_SPEED,
   SHOTS_FIRED_PITCH_SPEED,
 } from '../../shared/games/shots-fired/constants';
+import {
+  SHOOTERS_SHOOT_LOOK_SPEED,
+  SHOOTERS_SHOOT_PITCH_SPEED,
+} from '../../shared/games/shooters-shoot/constants';
 import type { CoinStickInput } from '../../shared/types';
 
 export interface LocalSlotState {
@@ -35,6 +39,7 @@ interface SlotEdge {
   jump: boolean;
   shoot: boolean;
   melee: boolean;
+  reload: boolean;
   jumpAt: number;
   shootAt: number;
   meleeAt: number;
@@ -56,6 +61,22 @@ const DEADZONE = 0.16;
 const STICK_TICK_SEC = 1 / 30;
 const MOUSE_RAD_PER_PX = 0.0026;
 const ZERO_STICK: CoinStickInput = { moveX: 0, moveY: 0, lookX: 0, lookY: 0, lookDX: 0, lookDY: 0 };
+
+function isFpsGame(gameId: string | null): boolean {
+  return gameId === 'shots-fired' || gameId === 'shooters-shoot';
+}
+
+function fpsEvent(gameId: string, action: 'input' | 'shoot' | 'melee' | 'jump' | 'reload'): string {
+  const prefix = gameId === 'shooters-shoot' ? 'player:shooters-shoot' : 'player:shots-fired';
+  return `${prefix}-${action}`;
+}
+
+function lookSpeeds(gameId: string): { look: number; pitch: number } {
+  if (gameId === 'shooters-shoot') {
+    return { look: SHOOTERS_SHOOT_LOOK_SPEED, pitch: SHOOTERS_SHOOT_PITCH_SPEED };
+  }
+  return { look: SHOTS_FIRED_LOOK_SPEED, pitch: SHOTS_FIRED_PITCH_SPEED };
+}
 
 function axis(value: number): number {
   if (!Number.isFinite(value)) return 0;
@@ -110,7 +131,7 @@ function toPublic(slot: SlotInternal): LocalSlotState {
 }
 
 function freshEdge(): SlotEdge {
-  return { jump: false, shoot: false, melee: false, jumpAt: 0, shootAt: 0, meleeAt: 0 };
+  return { jump: false, shoot: false, melee: false, reload: false, jumpAt: 0, shootAt: 0, meleeAt: 0 };
 }
 
 export function useLocalControllers({
@@ -139,7 +160,7 @@ export function useLocalControllers({
   const seenButtonsRef = useRef<Map<number, boolean[]>>(new Map());
   const keysRef = useRef(new Set<string>());
   const mouseRef = useRef({ dx: 0, dy: 0, left: false, right: false });
-  const latchRef = useRef({ jump: false, shoot: false, melee: false });
+  const latchRef = useRef({ jump: false, shoot: false, melee: false, reload: false });
 
   enabledRef.current = enabled;
   suspendedRef.current = inputSuspended;
@@ -255,10 +276,17 @@ export function useLocalControllers({
       if (event.code === 'Space') latchRef.current.jump = true;
       if (event.code === 'ArrowUp' && gameRef.current === 'hoe-down-derby') latchRef.current.jump = true;
       if (event.code === 'KeyF' || event.code === 'KeyQ') latchRef.current.melee = true;
+      if (event.code === 'KeyX' && gameRef.current === 'shooters-shoot') latchRef.current.reload = true;
       const playing = phaseRef.current === 'countdown' || phaseRef.current === 'playing';
       const keyboardPlaying = playing && !suspendedRef.current && slotsRef.current.some((slot) => slot.kind === 'keyboard');
       if (!keyboardPlaying) return;
-      if (event.code === 'Space' || event.code.startsWith('Arrow') || event.code === 'KeyF') {
+      if (
+        event.code === 'Space' ||
+        event.code.startsWith('Arrow') ||
+        event.code === 'KeyF' ||
+        event.code === 'KeyX' ||
+        event.code === 'KeyC'
+      ) {
         event.preventDefault();
       }
     };
@@ -290,7 +318,7 @@ export function useLocalControllers({
         }
       }
       const wantsMouse =
-        gameRef.current === 'shots-fired' &&
+        isFpsGame(gameRef.current) &&
         !suspendedRef.current &&
         (phaseRef.current === 'countdown' || phaseRef.current === 'playing') &&
         slotsRef.current.some((slot) => slot.kind === 'keyboard' && slot.playerId);
@@ -303,7 +331,7 @@ export function useLocalControllers({
     };
     const onContextMenu = (event: MouseEvent) => {
       const wantsMouse =
-        gameRef.current === 'shots-fired' &&
+        isFpsGame(gameRef.current) &&
         !suspendedRef.current &&
         (phaseRef.current === 'countdown' || phaseRef.current === 'playing') &&
         slotsRef.current.some((slot) => slot.kind === 'keyboard');
@@ -352,35 +380,38 @@ export function useLocalControllers({
       if (suspended) {
         mouseRef.current.dx = 0;
         mouseRef.current.dy = 0;
-        latchRef.current = { jump: false, shoot: false, melee: false };
+        latchRef.current = { jump: false, shoot: false, melee: false, reload: false };
       }
       const latch = latchRef.current;
 
       for (const slot of slotsRef.current) {
         if (!slot.playerId) continue;
-        if (gameId === 'shots-fired') {
+        if (gameId && isFpsGame(gameId)) {
           if (suspended) {
             if (slot.wasSending) {
-              slot.socket.emit('player:shots-fired-input', ZERO_STICK);
+              slot.socket.emit(fpsEvent(gameId, 'input'), ZERO_STICK);
               slot.wasSending = false;
             }
             continue;
           }
-          const frame = readSlotFrame(slot, gamepads, 'shots-fired', keysRef.current, mouseRef.current, latch);
-          const lookDX = frame.lookDX;
-          const lookDY = frame.lookDY;
-          slot.socket.emit('player:shots-fired-input', {
+          const frame = readSlotFrame(slot, gamepads, gameId, keysRef.current, mouseRef.current, latch);
+          slot.socket.emit(fpsEvent(gameId, 'input'), {
             moveX: frame.moveX,
             moveY: frame.moveY,
             lookX: frame.lookX,
             lookY: frame.lookY,
-            lookDX,
-            lookDY,
+            lookDX: frame.lookDX,
+            lookDY: frame.lookDY,
+            sprint: frame.sprint,
+            crouch: frame.crouch,
           });
           emitHeld(slot, now, frame, {
-            shoot: () => slot.socket.emit('player:shots-fired-shoot'),
-            melee: () => slot.socket.emit('player:shots-fired-melee'),
-            jump: () => slot.socket.emit('player:shots-fired-jump'),
+            shoot: () => slot.socket.emit(fpsEvent(gameId, 'shoot')),
+            melee: () => slot.socket.emit(fpsEvent(gameId, 'melee')),
+            jump: () => slot.socket.emit(fpsEvent(gameId, 'jump')),
+            reload: gameId === 'shooters-shoot'
+              ? () => slot.socket.emit(fpsEvent(gameId, 'reload'))
+              : undefined,
           });
           slot.wasSending = true;
         } else if (gameId === 'hoe-down-derby') {
@@ -396,7 +427,7 @@ export function useLocalControllers({
           });
         }
       }
-      latchRef.current = { jump: false, shoot: false, melee: false };
+      latchRef.current = { jump: false, shoot: false, melee: false, reload: false };
     };
     raf = requestAnimationFrame(tick);
 
@@ -451,7 +482,25 @@ interface SlotFrame {
   jump: boolean;
   shoot: boolean;
   melee: boolean;
+  sprint: boolean;
+  crouch: boolean;
+  reload: boolean;
 }
+
+const STILL_FRAME: SlotFrame = {
+  moveX: 0,
+  moveY: 0,
+  lookX: 0,
+  lookY: 0,
+  lookDX: 0,
+  lookDY: 0,
+  jump: false,
+  shoot: false,
+  melee: false,
+  sprint: false,
+  crouch: false,
+  reload: false,
+};
 
 function readSlotFrame(
   slot: SlotInternal,
@@ -459,13 +508,12 @@ function readSlotFrame(
   gameId: string,
   keys: Set<string>,
   mouse: { dx: number; dy: number; left: boolean; right: boolean },
-  latch: { jump: boolean; shoot: boolean; melee: boolean },
+  latch: { jump: boolean; shoot: boolean; melee: boolean; reload: boolean },
 ): SlotFrame {
+  const shooters = gameId === 'shooters-shoot';
   if (slot.kind === 'gamepad' && slot.gamepadIndex != null) {
     const pad = gamepads[slot.gamepadIndex] ?? null;
-    if (!pad) {
-      return { moveX: 0, moveY: 0, lookX: 0, lookY: 0, lookDX: 0, lookDY: 0, jump: false, shoot: false, melee: false };
-    }
+    if (!pad) return { ...STILL_FRAME };
     let moveX = axis(pad.axes[0] ?? 0);
     let moveY = -axis(pad.axes[1] ?? 0);
     const lookX = axis(pad.axes[2] ?? 0);
@@ -480,14 +528,28 @@ function readSlotFrame(
       ? [0, 1, 2, 3, 5, 7, 12].some((index) => buttonDown(pad, index))
       : buttonDown(pad, 0);
     const shoot = buttonDown(pad, 7) || buttonDown(pad, 5);
-    const melee = buttonDown(pad, 2);
-    return { moveX, moveY, lookX, lookY, lookDX: 0, lookDY: 0, jump, shoot, melee };
+    const melee = shooters ? buttonDown(pad, 3) : buttonDown(pad, 2);
+    return {
+      moveX,
+      moveY,
+      lookX,
+      lookY,
+      lookDX: 0,
+      lookDY: 0,
+      jump,
+      shoot,
+      melee,
+      sprint: shooters && buttonDown(pad, 10),
+      crouch: shooters && buttonDown(pad, 1),
+      reload: shooters && buttonDown(pad, 2),
+    };
   }
 
   const moveX = (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0);
   const moveY = (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0);
-  const lookDX = (mouse.dx * MOUSE_RAD_PER_PX) / (SHOTS_FIRED_LOOK_SPEED * STICK_TICK_SEC);
-  const lookDY = (-mouse.dy * MOUSE_RAD_PER_PX) / (SHOTS_FIRED_PITCH_SPEED * STICK_TICK_SEC);
+  const speeds = lookSpeeds(gameId);
+  const lookDX = (mouse.dx * MOUSE_RAD_PER_PX) / (speeds.look * STICK_TICK_SEC);
+  const lookDY = (-mouse.dy * MOUSE_RAD_PER_PX) / (speeds.pitch * STICK_TICK_SEC);
   mouse.dx = 0;
   mouse.dy = 0;
   const jump = gameId === 'hoe-down-derby'
@@ -503,6 +565,9 @@ function readSlotFrame(
     jump,
     shoot: mouse.left || latch.shoot,
     melee: mouse.right || keys.has('KeyF') || keys.has('KeyQ') || latch.melee,
+    sprint: shooters && (keys.has('ShiftLeft') || keys.has('ShiftRight')),
+    crouch: shooters && (keys.has('ControlLeft') || keys.has('ControlRight') || keys.has('KeyC')),
+    reload: shooters && (keys.has('KeyX') || latch.reload),
   };
 }
 
@@ -510,7 +575,7 @@ function emitHeld(
   slot: SlotInternal,
   now: number,
   frame: SlotFrame,
-  emit: { shoot: () => void; melee: () => void; jump: () => void },
+  emit: { shoot: () => void; melee: () => void; jump: () => void; reload?: () => void },
 ) {
   if (frame.shoot && (!slot.edge.shoot || now - slot.edge.shootAt > 120)) {
     emit.shoot();
@@ -524,7 +589,9 @@ function emitHeld(
     emit.jump();
     slot.edge.jumpAt = now;
   }
+  if (frame.reload && !slot.edge.reload) emit.reload?.();
   slot.edge.shoot = frame.shoot;
   slot.edge.melee = frame.melee;
   slot.edge.jump = frame.jump;
+  slot.edge.reload = frame.reload;
 }

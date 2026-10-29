@@ -12,22 +12,22 @@ export default function HomePage() {
   const navigate = useNavigate();
   const { socket, connected } = useSocket();
   const [roomInput, setRoomInput] = useState('');
-  const [selectedMode, setSelectedMode] = useState<SessionMode | null>(null);
+  const [pendingMode, setPendingMode] = useState<SessionMode | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
 
   const canJoin = isValidRoomCode(roomInput);
+  const creating = pendingMode != null;
 
-  const handleStart = () => {
-    if (!selectedMode || !socket.current || !connected || creating) return;
-    setCreating(true);
+  const handleLaunch = (mode: SessionMode) => {
+    if (!socket.current || !connected || creating) return;
+    setPendingMode(mode);
     setCreateError(null);
 
     socket.current.emit(
       'host:create',
-      { sessionMode: selectedMode },
+      { sessionMode: mode },
       (res: RoomState | { error: string }) => {
-        setCreating(false);
+        setPendingMode(null);
         if ('error' in res) {
           setCreateError(res.error);
           return;
@@ -49,18 +49,16 @@ export default function HomePage() {
       <ScreenControls />
       <div className="platform-page home-page">
         <div className="home-inner">
-          <header className="home-hero">
-            <h1 className="home-title">{PLATFORM_NAME}</h1>
-          </header>
+          <h1 className="home-title">{PLATFORM_NAME}</h1>
 
           <section className="home-section" aria-labelledby="join-heading">
-            <h2 id="join-heading" className="home-section-title">Join an Existing Game</h2>
+            <h2 id="join-heading" className="home-section-title">Join a lobby</h2>
             <form className="home-join" onSubmit={handleJoin}>
               <input
                 id="room-code"
                 type="text"
                 className="text-input text-input--code"
-                placeholder="ROOM CODE"
+                placeholder="Room Code"
                 aria-label="Room code"
                 value={roomInput}
                 maxLength={ROOM_CODE_LENGTH}
@@ -73,7 +71,7 @@ export default function HomePage() {
               />
               <button
                 type="submit"
-                className={`btn ${canJoin ? 'btn-primary' : 'btn-secondary'}`}
+                className={`btn home-join-btn ${canJoin ? 'btn-primary' : 'btn-secondary'}`}
                 disabled={!canJoin}
               >
                 Join
@@ -82,20 +80,13 @@ export default function HomePage() {
           </section>
 
           <section className="home-section home-host" aria-labelledby="host-heading">
-            <h2 id="host-heading" className="home-section-title">Host a New Lobby</h2>
+            <h2 id="host-heading" className="home-section-title">Host a lobby</h2>
             <SessionModePicker
-              selected={selectedMode}
-              onSelect={setSelectedMode}
+              onLaunch={handleLaunch}
               disabled={!connected || creating}
+              pendingMode={pendingMode}
             />
-            <button
-              type="button"
-              className={`btn ${selectedMode ? 'btn-primary' : 'btn-secondary'}`}
-              disabled={!selectedMode || !connected || creating}
-              onClick={handleStart}
-            >
-              {creating ? 'Starting…' : 'Start'}
-            </button>
+            {!connected && <p className="home-note">Connecting…</p>}
             {createError && <p className="error home-error">{createError}</p>}
           </section>
         </div>
