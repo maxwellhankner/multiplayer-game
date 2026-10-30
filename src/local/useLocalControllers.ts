@@ -535,7 +535,7 @@ function rememberHeldButtons(
     if (!pad) return;
     slot.edge.jump = buttonDown(pad, 0);
     slot.edge.shoot = buttonDown(pad, 7) || buttonDown(pad, 5);
-    slot.edge.melee = shooters ? buttonDown(pad, 11) : buttonDown(pad, 2);
+    slot.edge.melee = shooters ? buttonDown(pad, 1) : buttonDown(pad, 2);
     slot.edge.reload = shooters && buttonDown(pad, 2);
     slot.edge.swap = shooters && buttonDown(pad, 3);
     return;
@@ -573,7 +573,7 @@ function readSlotFrame(
       ? [0, 1, 2, 3, 5, 7, 12].some((index) => buttonDown(pad, index))
       : buttonDown(pad, 0);
     const shoot = buttonDown(pad, 7) || buttonDown(pad, 5);
-    const melee = shooters ? buttonDown(pad, 11) : buttonDown(pad, 2);
+    const melee = shooters ? buttonDown(pad, 1) : buttonDown(pad, 2);
     return {
       moveX,
       moveY,
@@ -585,7 +585,7 @@ function readSlotFrame(
       shoot,
       melee,
       sprint: shooters && buttonDown(pad, 10),
-      crouch: shooters && buttonDown(pad, 1),
+      crouch: shooters && buttonDown(pad, 11),
       reload: shooters && buttonDown(pad, 2),
       swap: shooters && buttonDown(pad, 3),
     };

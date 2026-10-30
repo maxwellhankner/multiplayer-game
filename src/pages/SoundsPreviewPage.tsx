@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SOUND_CATALOG } from '../audio/catalog';
-import { playPreviewFile, unlockAudio } from '../audio/engine';
+import { playPreviewFile, stopPreviewMusic, unlockAudio } from '../audio/engine';
 import { LIBRARY_PACKS, type LibraryPackId } from '../audio/library-packs';
+import { LOBBY_MUSIC_TRACKS } from '../audio/lobby-music';
 import SoundToggle from '../components/SoundToggle';
 
 interface SoundButton {
   key: string;
   code: string;
   title: string;
-  kind: 'game' | 'library';
+  kind: 'game' | 'library' | 'music';
   file: string;
   pack?: LibraryPackId;
 }
@@ -138,16 +139,32 @@ export default function SoundsPreviewPage() {
     0,
   );
 
+  const musicSounds = useMemo<SoundButton[]>(
+    () =>
+      LOBBY_MUSIC_TRACKS.map((track) => ({
+        key: `music:${track.id}`,
+        code: track.id,
+        title: track.name,
+        kind: 'music' as const,
+        file: track.file,
+      })),
+    [],
+  );
+  const filteredMusic = useMemo(() => filterSounds(musicSounds), [filter, musicSounds]);
+
   useEffect(() => {
     void unlockAudio().then(() => setUnlocked(true));
+    return () => stopPreviewMusic();
   }, []);
 
   const playSound = (sound: SoundButton) => {
     void unlockAudio().then(() => {
       setUnlocked(true);
       setPlayingKey(sound.key);
-      playPreviewFile(sound.kind, sound.file, 1, sound.pack);
-      window.setTimeout(() => setPlayingKey(null), 700);
+      playPreviewFile(sound.kind, sound.file, sound.kind === 'music' ? 0.4 : 1, sound.pack);
+      if (sound.kind !== 'music') {
+        window.setTimeout(() => setPlayingKey(null), 700);
+      }
     });
   };
 
@@ -182,6 +199,14 @@ export default function SoundsPreviewPage() {
         />
 
         <section className="panel sounds-preview-section">
+          <h2>Lobby music ({filteredMusic.length})</h2>
+          <p className="hint sound-browse-section-hint">
+            Loops until you pick another. Same tracks as the lobby Music buttons.
+          </p>
+          <SoundGrid sounds={filteredMusic} playingKey={playingKey} onPlay={playSound} />
+        </section>
+
+        <section className="panel sounds-preview-section">
           <h2>Game sounds ({filteredGame.length})</h2>
           <p className="hint sound-browse-section-hint">
             Wired to gameplay via the sound catalog.
@@ -208,7 +233,7 @@ export default function SoundsPreviewPage() {
           );
         })}
 
-        {filteredGame.length === 0 && filteredLibraryTotal === 0 && (
+        {filteredGame.length === 0 && filteredLibraryTotal === 0 && filteredMusic.length === 0 && (
           <p className="hint sound-browse-empty">No sounds match your search.</p>
         )}
       </div>

@@ -182,6 +182,20 @@ export function useControllerMenu({
       focused.click();
     };
 
+    const onPointerOver = (event: PointerEvent) => {
+      if (!navigateRef.current) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const scope = activeScope();
+      if (!scope) return;
+      const el = target.closest<HTMLElement>(FOCUS_SELECTOR);
+      if (!el || !scope.contains(el)) return;
+      const items = listFocusables(scope);
+      if (!items.includes(el) || el === focused) return;
+      userMoved = true;
+      focused = applyFocus(el, focused);
+    };
+
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target;
       if (target instanceof HTMLElement && target.closest('input, textarea, select')) return;
@@ -271,10 +285,12 @@ export function useControllerMenu({
     };
 
     window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('pointerover', onPointerOver);
     const timer = window.setInterval(tick, 16);
 
     return () => {
       window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('pointerover', onPointerOver);
       window.clearInterval(timer);
       focused?.classList.remove('controller-focus');
     };

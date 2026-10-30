@@ -8,18 +8,23 @@ import {
   type ReactNode,
 } from 'react';
 import {
+  getLobbyMusicId,
   isAudioUnlocked,
   isSfxMuted,
   playSound,
+  setLobbyMusicId as setEngineLobbyMusicId,
   setSfxMuted,
   unlockAudio,
 } from './engine';
 import type { SoundId } from './catalog';
+import type { LobbyMusicId } from './lobby-music';
 
 interface AudioContextValue {
   muted: boolean;
   unlocked: boolean;
+  lobbyMusicId: LobbyMusicId;
   setMuted: (muted: boolean) => void;
+  setLobbyMusicId: (id: LobbyMusicId) => void;
   unlock: () => Promise<void>;
   play: (id: SoundId) => void;
 }
@@ -29,6 +34,7 @@ const AudioCtx = createContext<AudioContextValue | null>(null);
 export function AudioProvider({ children }: { children: ReactNode }) {
   const [muted, setMutedState] = useState(isSfxMuted);
   const [unlocked, setUnlocked] = useState(isAudioUnlocked);
+  const [lobbyMusicId, setLobbyMusicIdState] = useState(getLobbyMusicId);
 
   const unlock = useCallback(async () => {
     await unlockAudio();
@@ -44,6 +50,11 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     playSound(id);
   }, []);
 
+  const setLobbyMusicId = useCallback((id: LobbyMusicId) => {
+    setEngineLobbyMusicId(id);
+    setLobbyMusicIdState(id);
+  }, []);
+
   useEffect(() => {
     const onPointerDown = () => {
       void unlock();
@@ -53,8 +64,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   }, [unlock]);
 
   const value = useMemo(
-    () => ({ muted, unlocked, setMuted, unlock, play }),
-    [muted, unlocked, setMuted, unlock, play],
+    () => ({ muted, unlocked, lobbyMusicId, setMuted, setLobbyMusicId, unlock, play }),
+    [muted, unlocked, lobbyMusicId, setMuted, setLobbyMusicId, unlock, play],
   );
 
   return <AudioCtx.Provider value={value}>{children}</AudioCtx.Provider>;

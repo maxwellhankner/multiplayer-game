@@ -674,8 +674,15 @@ export default function ShootersShootHostCanvas({ state }: ShootersShootHostCanv
           const dip = reloading ? Math.sin(Math.min(1, Math.max(0, reloadT)) * Math.PI) : 0;
           gun.visible = !player.eliminated;
           gun.scale.setScalar(1.15);
-          gun.position.set(0.16, -0.12 - dip * 0.12 + bob, -0.48 + kick * 0.05);
-          gun.rotation.set(-0.06 + kick * 0.2 - dip * 0.3, 0.24, dip * 0.35);
+          const gx = 0.28;
+          const gy = -0.15 - dip * 0.12 + bob;
+          const gz = -0.46 + kick * 0.05;
+          gun.position.set(gx, gy, gz);
+          const aimY = 0.18;
+          const aimZ = -1.65;
+          const yaw = Math.atan2(gx, gz - aimZ);
+          const pitch = Math.atan2(gy - aimY, gz - aimZ) - 0.06;
+          gun.rotation.set(pitch + kick * 0.2 - dip * 0.3, yaw, dip * 0.35);
         }
 
         const vx = Math.floor(pane.left * width);

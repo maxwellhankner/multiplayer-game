@@ -10,6 +10,8 @@ export interface SoundClip {
   delay?: number;
   /** Kenney library pack — omit for files under /sounds/game/ */
   pack?: LibraryPackId;
+  /** Allow this clip to overlap itself (rapid fire). */
+  overlap?: boolean;
 }
 
 export interface SoundDefinition {
@@ -38,6 +40,48 @@ export const SOUND_CATALOG: SoundDefinition[] = [
     label: 'Countdown tick',
     when: 'Each second of the pre-game countdown (3, 2, 1)',
     clips: [{ file: 'glass_005.ogg', pack: 'interface', volume: 0.9 }],
+  },
+  {
+    id: 'shootersWalk',
+    label: 'Walk',
+    when: 'A player is walking or sprinting on the ground in Shooters Shoot',
+    clips: [{ file: 'shooters-walk.mp3', volume: 0.38 }],
+  },
+  {
+    id: 'shootersJump',
+    label: 'Jump',
+    when: 'A player jumps in Shooters Shoot',
+    clips: [{ file: 'shooters-jump.mp3', volume: 0.72, overlap: true }],
+  },
+  {
+    id: 'shootersLand',
+    label: 'Land',
+    when: 'A player lands after a jump or fall in Shooters Shoot',
+    clips: [{ file: 'shooters-land.wav', volume: 0.7, overlap: true }],
+  },
+  {
+    id: 'shootersPistol',
+    label: 'Pistol shot',
+    when: 'The pistol is fired in Shooters Shoot',
+    clips: [{ file: 'shooters-pistol.wav', volume: 0.58, overlap: true }],
+  },
+  {
+    id: 'shootersAk47',
+    label: 'AK-47 shot',
+    when: 'The AK-47 is fired in Shooters Shoot',
+    clips: [{ file: 'shooters-ak47.wav', volume: 0.5, overlap: true }],
+  },
+  {
+    id: 'shootersShotgun',
+    label: 'Shotgun shot',
+    when: 'The shotgun is fired in Shooters Shoot',
+    clips: [{ file: 'shooters-shotgun.wav', volume: 0.78, overlap: true }],
+  },
+  {
+    id: 'shootersSniper',
+    label: 'Sniper shot',
+    when: 'The sniper is fired in Shooters Shoot',
+    clips: [{ file: 'shooters-sniper.wav', volume: 0.82, overlap: true }],
   },
 ];
 

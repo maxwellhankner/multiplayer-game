@@ -790,6 +790,7 @@ export function fireShootersShootShot(room: ShootersShootRoom, playerId: string,
       dz: dir.z,
       length: travel,
       spawnedAt: room.gameTime,
+      gunId: gun.id,
     });
 
     if (!hit) continue;
@@ -844,6 +845,7 @@ export function jumpShootersShoot(room: ShootersShootRoom, playerId: string): bo
   if (!grounded) return false;
 
   room.jumpVel.set(playerId, SHOOTERS_SHOOT_JUMP_SPEED);
+  player.vy = SHOOTERS_SHOOT_JUMP_SPEED;
   return true;
 }
 
@@ -941,6 +943,7 @@ export function spawnShootersShootPlayer(room: ShootersShootRoom, player: Player
   player.landscapeReady = true;
   if (!room.jumpVel) room.jumpVel = new Map();
   room.jumpVel.set(player.id, 0);
+  player.vy = 0;
   room.shootersShootInputs.set(player.id, { ...ZERO_INPUT });
 }
 
@@ -977,6 +980,7 @@ function reviveShootersShootPlayer(room: ShootersShootRoom, player: PlayerState,
   player.invulnUntil = now + 1500;
   if (!room.jumpVel) room.jumpVel = new Map();
   room.jumpVel.set(player.id, 0);
+  player.vy = 0;
   const vel = room.moveVel?.get(player.id);
   if (vel) {
     vel.x = 0;
@@ -1010,6 +1014,7 @@ export function tickShootersShoot(room: ShootersShootRoom, dt: number, now: numb
           player.py + SHOOTERS_SHOOT_DEATH_FLOAT_SPEED * (dt / 1000),
           SHOOTERS_SHOOT_DEATH_FLOAT_MAX,
         );
+        player.vy = 0;
         continue;
       }
     }
@@ -1031,12 +1036,17 @@ export function tickShootersShoot(room: ShootersShootRoom, dt: number, now: numb
       if (nextVel <= 0 && nextY <= ground) {
         player.py = ground;
         room.jumpVel.set(player.id, 0);
+        player.vy = 0;
       } else {
         player.py = nextY;
         room.jumpVel.set(player.id, nextVel);
+        player.vy = nextVel;
       }
     } else if (player.py < ground) {
       player.py = ground;
+      player.vy = 0;
+    } else {
+      player.vy = 0;
     }
   }
 

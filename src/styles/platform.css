@@ -1230,6 +1230,13 @@
   border-top: none;
 }
 
+.lobby-music-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+}
+
 .shooters-option-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1996,8 +2003,12 @@ button,
   touch-action: manipulation;
 }
 
-button:focus:not(:focus-visible) {
+button:focus,
+button:focus-visible,
+.btn:focus,
+.btn:focus-visible {
   outline: none;
+  box-shadow: none;
 }
 
 @media (hover: none) {
@@ -2249,6 +2260,16 @@ button:focus:not(:focus-visible) {
   border: 1px solid #888;
 }
 
+.host-lobby-page--local button:focus,
+.host-lobby-page--local button:focus-visible,
+.local-match-menu button:focus,
+.local-match-menu button:focus-visible,
+.local-players-dialog button:focus,
+.local-players-dialog button:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 .host-lobby-page--local .game-mode-btn--active,
 .local-match-menu .local-gun-btn--active {
   background: #000;
@@ -2257,23 +2278,46 @@ button:focus:not(:focus-visible) {
   font-weight: 700;
 }
 
-.host-lobby-page--local button:hover:not(:disabled),
+@keyframes controller-btn-pulse {
+  0%,
+  100% {
+    background-color: #fff;
+    border-color: #fff;
+  }
+  50% {
+    background-color: #8a8a8a;
+    border-color: #8a8a8a;
+  }
+}
+
+.host-lobby-page--local button:hover:not(:disabled):not(.controller-focus),
+.local-match-menu button:hover:not(:disabled):not(.controller-focus),
+.local-players-dialog button:hover:not(:disabled):not(.controller-focus) {
+  background: #000;
+  color: #888;
+  border-color: #888;
+}
+
+.host-lobby-page--local .game-mode-btn--active:hover:not(:disabled):not(.controller-focus),
+.local-match-menu .local-gun-btn--active:hover:not(:disabled):not(.controller-focus) {
+  background: #000;
+  color: #fff;
+  border-color: #fff;
+}
+
 .host-lobby-page--local button.controller-focus,
 .host-lobby-page--local button.controller-focus:hover,
 .host-lobby-page--local button.controller-focus:focus,
-.host-lobby-page--local .game-mode-btn--active:hover:not(:disabled),
 .host-lobby-page--local .game-mode-btn--active.controller-focus,
-.local-match-menu button:hover:not(:disabled),
 .local-match-menu button.controller-focus,
 .local-match-menu button.controller-focus:hover,
-.local-match-menu .local-gun-btn--active:hover:not(:disabled),
 .local-match-menu .local-gun-btn--active.controller-focus,
-.local-players-dialog button:hover:not(:disabled),
 .local-players-dialog button.controller-focus,
 .local-players-dialog button.controller-focus:hover {
   background: #fff;
   color: #000;
   border-color: #fff;
+  animation: controller-btn-pulse 1s ease-in-out infinite;
 }
 
 button.controller-focus,
@@ -2289,6 +2333,7 @@ label.controller-focus:focus {
   border-color: #fff;
   box-shadow: none;
   outline: none;
+  animation: controller-btn-pulse 1s ease-in-out infinite;
 }
 
 label.controller-focus span {

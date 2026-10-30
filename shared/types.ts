@@ -62,6 +62,8 @@ export interface ShotTracerState {
   /** Distance traveled before impact (or max range on miss) */
   length: number;
   spawnedAt: number;
+  /** Shooters Shoot — which gun fired this tracer */
+  gunId?: string;
 }
 
 export type ShotImpactKind = 'wall' | 'player';
@@ -121,6 +123,8 @@ export interface PlayerState {
   stowedBullets?: number;
   /** Shooters Shoot — reserve rounds for the gun that is not equipped */
   stowedReserve?: number;
+  /** Shooters Shoot — vertical velocity (jump / fall) */
+  vy?: number;
   /** Shots Fired — gameTime when this player last melee'd (for view animation) */
   lastMeleeAt?: number;
 }

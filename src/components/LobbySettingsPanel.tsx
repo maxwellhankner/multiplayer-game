@@ -13,6 +13,8 @@ import {
 } from '../../shared/games/registry';
 import type { SessionMode } from '../../shared/session';
 import { getSessionModeLabel } from '../../shared/session';
+import { useAudio } from '../audio/AudioProvider';
+import { LOBBY_MUSIC_TRACKS } from '../audio/lobby-music';
 import SoundToggle from './SoundToggle';
 
 interface LobbySettingsPanelProps {
@@ -88,6 +90,34 @@ function ShootersShootSettings({
           </div>
         </>
       )}
+    </section>
+  );
+}
+
+function LobbyMusicPicker() {
+  const { lobbyMusicId, setLobbyMusicId, unlock, muted, setMuted } = useAudio();
+
+  return (
+    <section className="lobby-music-picker" aria-label="Lobby music">
+      <p className="game-mode-options-label">Music</p>
+      <div className="shooters-option-grid" role="group" aria-label="Lobby music track">
+        {LOBBY_MUSIC_TRACKS.map((track) => (
+          <button
+            key={track.id}
+            type="button"
+            className={`game-mode-btn${lobbyMusicId === track.id ? ' game-mode-btn--active' : ''}`}
+            aria-pressed={lobbyMusicId === track.id}
+            title={track.hint}
+            onClick={() => {
+              void unlock();
+              if (muted) setMuted(false);
+              setLobbyMusicId(track.id);
+            }}
+          >
+            {track.name}
+          </button>
+        ))}
+      </div>
     </section>
   );
 }
@@ -212,6 +242,8 @@ export default function LobbySettingsPanel({
           )}
         </div>
       </div>
+
+      <LobbyMusicPicker />
 
       {!hideGamePicker && (
         <section className="game-options-section" aria-label="Game selection">
